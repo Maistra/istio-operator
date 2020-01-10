@@ -15,7 +15,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -47,14 +46,8 @@ func Add(mgr manager.Manager) error {
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager, operatorNamespace string) reconcile.Reconciler {
 	return &ReconcileControlPlane{
-		ResourceManager: common.ResourceManager{
-			Client:            mgr.GetClient(),
-			PatchFactory:      common.NewPatchFactory(mgr.GetClient()),
-			Log:               log,
-			OperatorNamespace: operatorNamespace,
-		},
-		Scheme:  mgr.GetScheme(),
-		Manager: mgr,
+		ResourceManager: common.NewResourceManager(mgr.GetClient(), mgr.GetScheme(), log, operatorNamespace),
+		Manager:         mgr,
 	}
 }
 
@@ -148,7 +141,6 @@ type ReconcileControlPlane struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	common.ResourceManager
-	Scheme  *runtime.Scheme
 	Manager manager.Manager
 }
 

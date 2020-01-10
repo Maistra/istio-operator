@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // StatusType represents the status for a control plane, component, or resource
@@ -200,18 +203,28 @@ func NewResourceKey(o metav1.Object, t metav1.Type) ResourceKey {
 
 // ToUnstructured returns a an Unstructured object initialized with Namespace,
 // Name, APIVersion, and Kind fields from the ResourceKey
-func (key ResourceKey) ToUnstructured() *unstructured.Unstructured {
+func (key ResourceKey) ToRuntimeObject(scheme *runtime.Scheme) (runtime.Object, error) {
 	// ResourceKey is guaranteed to be at least "/=," meaning we are guaranteed
 	// to get two elements in all of the splits
-	retval := &unstructured.Unstructured{}
 	parts := strings.SplitN(string(key), "=", 2)
 	nn := strings.SplitN(parts[0], "/", 2)
 	gvk := strings.SplitN(parts[1], ",Kind=", 2)
-	retval.SetNamespace(nn[0])
-	retval.SetName(nn[1])
-	retval.SetAPIVersion(gvk[0])
-	retval.SetKind(gvk[1])
-	return retval
+	retval, err := scheme.New(schema.FromAPIVersionAndKind(gvk[0], gvk[1]))
+	if err != nil {
+		unst := &unstructured.Unstructured{}
+		unst.SetNamespace(nn[0])
+		unst.SetName(nn[1])
+		unst.SetAPIVersion(gvk[0])
+		unst.SetKind(gvk[1])
+		return unst, nil
+	}
+	if metaObject, err := meta.Accessor(retval); err == nil {
+		metaObject.SetNamespace(nn[0])
+		metaObject.SetName(nn[1])
+	} else {
+		return nil, err
+	}
+	return retval, nil
 }
 
 // FindResourcesOfKind returns all the specified kind.  Note, this does not account for group or version.

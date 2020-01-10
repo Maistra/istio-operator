@@ -7,8 +7,9 @@ import (
 	"github.com/ghodss/yaml"
 
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 
 	v1 "github.com/maistra/istio-operator/pkg/apis/maistra/v1"
@@ -23,13 +24,13 @@ import (
 
 type ManifestProcessor struct {
 	ResourceManager
-	preprocessObject func(obj *unstructured.Unstructured) error
-	processNewObject func(obj *unstructured.Unstructured) error
+	preprocessObject func(obj runtime.Object) error
+	processNewObject func(obj runtime.Object) error
 
 	appInstance, appVersion, owner string
 }
 
-func NewManifestProcessor(resourceManager ResourceManager, appInstance, appVersion, owner string, preprocessObjectFunc, postProcessObjectFunc func(obj *unstructured.Unstructured) error) *ManifestProcessor {
+func NewManifestProcessor(resourceManager ResourceManager, appInstance, appVersion, owner string, preprocessObjectFunc, postProcessObjectFunc func(obj runtime.Object) error) *ManifestProcessor {
 	return &ManifestProcessor{
 		ResourceManager:  resourceManager,
 		preprocessObject: preprocessObjectFunc,
@@ -61,8 +62,7 @@ func (p *ManifestProcessor) ProcessManifests(manifests []manifest.Manifest, comp
 				allErrors = append(allErrors, err)
 				continue
 			}
-			obj := &unstructured.Unstructured{}
-			_, _, err = unstructured.UnstructuredJSONScheme.Decode(rawJSON, nil, obj)
+			obj, err := runtime.Decode(p.JSONSerializer, rawJSON)
 			if err != nil {
 				p.Log.Error(err, "unable to decode object into Unstructured")
 				allErrors = append(allErrors, err)
@@ -78,22 +78,34 @@ func (p *ManifestProcessor) ProcessManifests(manifests []manifest.Manifest, comp
 	return utilerrors.NewAggregate(allErrors)
 }
 
-func (p *ManifestProcessor) processObject(obj *unstructured.Unstructured, component string) error {
+func (p *ManifestProcessor) processObject(obj runtime.Object, component string) error {
 	origLogger := p.Log
 	defer func() { p.Log = origLogger }()
 
-	key := v1.NewResourceKey(obj, obj)
+	objMeta, err := meta.Accessor(obj)
+	if err != nil {
+		p.Log.Error(err, "could not access object metadata")
+		return err
+	}
+	objType, err := meta.TypeAccessor(obj)
+	if err != nil {
+		p.Log.Error(err, "could not access object metadata")
+		return err
+	}
+	key := v1.NewResourceKey(objMeta, objType)
 	p.Log = origLogger.WithValues("Resource", key)
 
-	if obj.GetKind() == "List" {
-		allErrors := []error{}
-		list, err := obj.ToList()
+	_, err = meta.ListAccessor(obj)
+	if err == nil {
+		// it's a list
+		items, err := meta.ExtractList(obj)
 		if err != nil {
-			p.Log.Error(err, "error converting List object")
+			p.Log.Error(err, "error extracting List items")
 			return err
 		}
-		for _, item := range list.Items {
-			err = p.processObject(&item, component)
+		allErrors := []error{}
+		for _, item := range items {
+			err = p.processObject(item, component)
 			if err != nil {
 				allErrors = append(allErrors, err)
 			}
@@ -101,26 +113,31 @@ func (p *ManifestProcessor) processObject(obj *unstructured.Unstructured, compon
 		return utilerrors.NewAggregate(allErrors)
 	}
 
-	p.addMetadata(obj, component)
+	p.addMetadata(objMeta, component)
 
 	p.Log.V(2).Info("beginning reconciliation of resource", "ResourceKey", key)
 
-	err := p.preprocessObject(obj)
+	err = p.preprocessObject(obj)
 	if err != nil {
 		p.Log.Error(err, "error preprocessing object")
 		return err
 	}
 
-	err = kubectl.CreateApplyAnnotation(obj, unstructured.UnstructuredJSONScheme)
+	err = kubectl.CreateApplyAnnotation(obj, p.JSONSerializer)
 	if err != nil {
 		p.Log.Error(err, "error adding apply annotation to object")
 	}
 
-	receiver := key.ToUnstructured()
+	receiver, err := key.ToRuntimeObject(p.Scheme)
+	if err != nil {
+		p.Log.Error(err, "could not create receiver for resource")
+		// this should never happen
+		return err
+	}
 	objectKey, err := client.ObjectKeyFromObject(receiver)
 	if err != nil {
 		p.Log.Error(err, "client.ObjectKeyFromObject() failed for resource")
-		// This can only happen if reciever isn't an unstructured.Unstructured
+		// This can only happen if reciever isn't a runtime.Object
 		// i.e. this should never happen
 		return err
 	}
@@ -150,7 +167,7 @@ func (p *ManifestProcessor) processObject(obj *unstructured.Unstructured, compon
 			p.Log.Info("patch failed.  attempting to delete and recreate the resource")
 			if deleteErr := p.Client.Delete(context.TODO(), obj, client.PropagationPolicy(metav1.DeletePropagationBackground)); deleteErr == nil {
 				// we need to remove the resource version, which was updated by the patching process
-				obj.SetResourceVersion("")
+				objMeta.SetResourceVersion("")
 				if createErr := p.Client.Create(context.TODO(), obj); createErr == nil {
 					p.Log.Info("successfully recreated resource after patch failure")
 					err = nil
@@ -169,7 +186,7 @@ func (p *ManifestProcessor) processObject(obj *unstructured.Unstructured, compon
 	return err
 }
 
-func (p *ManifestProcessor) addMetadata(obj *unstructured.Unstructured, component string) {
+func (p *ManifestProcessor) addMetadata(obj metav1.Object, component string) {
 	labels := map[string]string{
 		// add app labels
 		KubernetesAppNameKey:      component,

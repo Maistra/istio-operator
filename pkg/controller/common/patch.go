@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/jsonmergepatch"
 	"k8s.io/apimachinery/pkg/util/mergepatch"
 	"k8s.io/apimachinery/pkg/util/strategicpatch"
@@ -24,17 +25,20 @@ import (
 
 // PatchFactory wraps the objects needed to create Patch objects.
 type PatchFactory struct {
-	client client.Client
+	client     client.Client
+	serializer runtime.Serializer
+	encoder    runtime.Encoder
 }
 
 // Patch represents a "patch" for an object
 type Patch interface {
-	Apply() (*unstructured.Unstructured, error)
+	Apply() (runtime.Object, error)
 }
 
 // NewPatchFactory creates a new PatchFactory
-func NewPatchFactory(k8sClient client.Client) *PatchFactory {
-	return &PatchFactory{client: k8sClient}
+func NewPatchFactory(k8sClient client.Client, scheme *runtime.Scheme) *PatchFactory {
+	serializer := json.NewSerializer(json.DefaultMetaFactory, scheme, scheme, false)
+	return &PatchFactory{client: k8sClient, serializer: serializer, encoder: unstructured.JSONFallbackEncoder{Encoder: serializer}}
 }
 
 // CreatePatch creates a patch based on the current and new versions of an object
@@ -50,13 +54,13 @@ func (p *PatchFactory) CreatePatch(current, new runtime.Object) (Patch, error) {
 	}
 
 	// Serialize the current configuration of the object.
-	currentBytes, err := runtime.Encode(unstructured.UnstructuredJSONScheme, current)
+	currentBytes, err := runtime.Encode(p.encoder, current)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("could not serialize current object into raw json:\n%v", current))
 	}
 
 	// Serialize the new configuration of the object.
-	newBytes, err := runtime.Encode(unstructured.UnstructuredJSONScheme, new)
+	newBytes, err := runtime.Encode(p.encoder, new)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("could not serialize new object into raw json:\n%v", new))
 	}
@@ -103,7 +107,7 @@ func (p *PatchFactory) CreatePatch(current, new runtime.Object) (Patch, error) {
 		if err != nil {
 			return nil, err
 		}
-		newObj, err := runtime.Decode(unstructured.UnstructuredJSONScheme, newBytes)
+		newObj, err := runtime.Decode(p.serializer, newBytes)
 		if err != nil {
 			return nil, err
 		}
@@ -130,7 +134,7 @@ func (p *PatchFactory) CreatePatch(current, new runtime.Object) (Patch, error) {
 		if err != nil {
 			return nil, err
 		}
-		newObj, err := runtime.Decode(unstructured.UnstructuredJSONScheme, newBytes)
+		newObj, err := runtime.Decode(p.serializer, newBytes)
 		if err != nil {
 			return nil, err
 		}
@@ -148,12 +152,7 @@ type basicPatch struct {
 	newObj runtime.Object
 }
 
-func (p *basicPatch) Apply() (*unstructured.Unstructured, error) {
-	if err := p.client.Update(context.TODO(), p.newObj); err != nil {
-		return nil, err
-	}
-	if newUnstructured, ok := p.newObj.(*unstructured.Unstructured); ok {
-		return newUnstructured, nil
-	}
-	return nil, fmt.Errorf("could not decode unstructured object:\n%v", p.newObj)
+func (p *basicPatch) Apply() (runtime.Object, error) {
+	err := p.client.Update(context.TODO(), p.newObj)
+	return p.newObj, err
 }

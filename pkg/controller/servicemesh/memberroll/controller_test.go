@@ -362,7 +362,7 @@ func createClientAndReconciler(t *testing.T, clientObjects ...runtime.Object) (c
 	enhancedTracker := test.NewEnhancedTracker(tracker)
 	cl := fake.NewFakeClientWithSchemeAndTracker(scheme.Scheme, &enhancedTracker, clientObjects...)
 
-	r := &ReconcileMemberList{ResourceManager: common.ResourceManager{Client: cl, PatchFactory: common.NewPatchFactory(cl), Log: log}, scheme: s}
+	r := &ReconcileMemberList{ResourceManager: common.NewResourceManager(cl, s, log, "")}
 	return cl, &enhancedTracker, r
 }
 

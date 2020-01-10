@@ -2,6 +2,7 @@ package controlplane
 
 import (
 	"context"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -91,9 +92,16 @@ func (r *ControlPlaneReconciler) pruneResources(gvks []schema.GroupVersionKind, 
 	allErrors := []error{}
 	labelSelector := map[string]string{common.OwnerKey: r.Instance.Namespace}
 	for _, gvk := range gvks {
-		objects := &unstructured.UnstructuredList{}
-		objects.SetGroupVersionKind(gvk)
-		err := r.Client.List(context.TODO(), client.MatchingLabels(labelSelector).InNamespace(namespace), objects)
+		if !strings.HasSuffix(gvk.Kind, "List") {
+			gvk.Kind = gvk.Kind + "List"
+		}
+		list, err := r.Scheme.New(gvk)
+		if err != nil {
+			ulist := &unstructured.UnstructuredList{}
+			ulist.SetGroupVersionKind(gvk)
+			list = ulist
+		}
+		err = r.Client.List(context.TODO(), client.MatchingLabels(labelSelector).InNamespace(namespace), list)
 		if err != nil {
 			if !meta.IsNoMatchError(err) && !errors.IsNotFound(err) {
 				r.Log.Error(err, "Error retrieving resources to prune", "type", gvk.String())
@@ -101,15 +109,36 @@ func (r *ControlPlaneReconciler) pruneResources(gvks []schema.GroupVersionKind, 
 			}
 			continue
 		}
-		for _, object := range objects.Items {
-			if generation, ok := common.GetAnnotation(&object, common.MeshGenerationKey); ok && generation != instanceGeneration {
-				r.Log.Info("pruning resource", "resource", v1.NewResourceKey(&object, &object))
-				err = r.Client.Delete(context.TODO(), &object, client.PropagationPolicy(metav1.DeletePropagationBackground))
+		objects, err := meta.ExtractList(list)
+		if err != nil {
+			r.Log.Error(err, "Error extracting list items for kind: %s", gvk.String())
+			allErrors = append(allErrors, err)
+			continue
+		}
+		for _, object := range objects {
+			var resourceKey v1.ResourceKey
+			metaObject, err := meta.Accessor(object)
+			if err == nil {
+				if typeObject, err := meta.TypeAccessor(object); err == nil {
+					resourceKey = v1.NewResourceKey(metaObject, typeObject)
+				} else {
+					// we really should never get here
+					r.Log.Error(err, "resource in %s does not implement Kubernetes ObjectMetadata", gvk.String())
+					resourceKey = "unknown/unknown=unknown,Kind=unknown"
+					}
+			} else {
+					// we really should never get here
+				r.Log.Error(err, "resource in %s does not implement Kubernetes ObjectMetadata", gvk.String())
+				continue
+			}
+			if generation, ok := common.GetAnnotation(metaObject, common.MeshGenerationKey); ok && generation != instanceGeneration {
+				r.Log.Info("pruning resource", "resource", resourceKey)
+				err = r.Client.Delete(context.TODO(), object, client.PropagationPolicy(metav1.DeletePropagationBackground))
 				if err != nil && !errors.IsNotFound(err) {
-					r.Log.Error(err, "Error pruning resource", "resource", v1.NewResourceKey(&object, &object))
+					r.Log.Error(err, "Error pruning resource", "resource", resourceKey)
 					allErrors = append(allErrors, err)
 				} else {
-					r.processDeletedObject(&object)
+					r.processDeletedObject(object)
 				}
 			}
 		}

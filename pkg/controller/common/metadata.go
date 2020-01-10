@@ -2,8 +2,11 @@ package common
 
 import (
 	"context"
+	"strings"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -49,18 +52,29 @@ const (
 	MemberName = "default"
 )
 
-func FetchOwnedResources(kubeClient client.Client, gvk schema.GroupVersionKind, owner, namespace string) (*unstructured.UnstructuredList, error) {
+func (rm *ResourceManager) FetchOwnedResources(gvk schema.GroupVersionKind, owner, namespace string) ([]runtime.Object, error) {
 	labelSelector := map[string]string{OwnerKey: owner}
-	objects := &unstructured.UnstructuredList{}
-	objects.SetGroupVersionKind(gvk)
-	err := kubeClient.List(context.TODO(), client.MatchingLabels(labelSelector).InNamespace(namespace), objects)
-	return objects, err
+	return rm.fetchResources(gvk, client.MatchingLabels(labelSelector).InNamespace(namespace))
 }
 
-func FetchMeshResources(kubeClient client.Client, gvk schema.GroupVersionKind, mesh, namespace string) (*unstructured.UnstructuredList, error) {
+func (rm *ResourceManager) FetchMeshResources(gvk schema.GroupVersionKind, mesh, namespace string) ([]runtime.Object, error) {
 	labelSelector := map[string]string{MemberOfKey: mesh}
-	objects := &unstructured.UnstructuredList{}
-	objects.SetGroupVersionKind(gvk)
-	err := kubeClient.List(context.TODO(), client.MatchingLabels(labelSelector).InNamespace(namespace), objects)
-	return objects, err
+	return rm.fetchResources(gvk, client.MatchingLabels(labelSelector).InNamespace(namespace))
+}
+
+func (rm *ResourceManager) fetchResources(gvk schema.GroupVersionKind, opts *client.ListOptions) ([]runtime.Object, error) {
+	if !strings.HasSuffix(gvk.Kind, "List") {
+		gvk.Kind = gvk.Kind + "List"
+	}
+	list, err := rm.Scheme.New(gvk)
+	if err != nil {
+		ulist := &unstructured.UnstructuredList{}
+		ulist.SetGroupVersionKind(gvk)
+		list = ulist
+	}
+	err = rm.Client.List(context.TODO(), opts, list)
+	if err != nil {
+		return nil, err
+	}
+	return meta.ExtractList(list)
 }

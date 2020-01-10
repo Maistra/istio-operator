@@ -2,8 +2,8 @@ package memberroll
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/maistra/istio-operator/pkg/controller/common"
@@ -11,17 +11,15 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type networkPolicyStrategy struct {
-	client                  client.Client
-	logger                  logr.Logger
+	common.ResourceManager
 	meshNamespace           string
 	requiredNetworkPolicies sets.String
-	networkPoliciesList     *unstructured.UnstructuredList
+	networkPoliciesList     []*networkingv1.NetworkPolicy
 }
 
 var _ networkingStrategy = (*networkPolicyStrategy)(nil)
@@ -29,28 +27,35 @@ var _ networkingStrategy = (*networkPolicyStrategy)(nil)
 func newNetworkPolicyStrategy(r *namespaceReconciler) (*networkPolicyStrategy, error) {
 	var err error
 	strategy := &networkPolicyStrategy{
-		client:                  r.client,
-		logger:                  r.logger.WithValues("NetworkStrategy", "NetworkPolicy"),
+		ResourceManager:         r.ResourceManager,
 		meshNamespace:           r.meshNamespace,
 		requiredNetworkPolicies: sets.NewString(),
 	}
-	strategy.networkPoliciesList, err = common.FetchOwnedResources(r.client, networkingv1.SchemeGroupVersion.WithKind("NetworkPolicy"), strategy.meshNamespace, strategy.meshNamespace)
+	strategy.Log = r.Log.WithValues("NetworkStrategy", "NetworkPolicy")
+	networkPolicies, err := r.FetchOwnedResources(networkingv1.SchemeGroupVersion.WithKind("NetworkPolicy"), strategy.meshNamespace, strategy.meshNamespace)
 	if err != nil {
-		strategy.logger.Error(err, "error retrieving NetworkPolicy resources for mesh")
+		strategy.Log.Error(err, "error retrieving NetworkPolicy resources for mesh")
 		return nil, err
 	}
-	for _, np := range strategy.networkPoliciesList.Items {
-		if _, ok := common.GetAnnotation(&np, common.InternalKey); ok {
-			continue
+	for _, obj := range networkPolicies {
+		if np, ok := obj.(*networkingv1.NetworkPolicy); ok {
+			strategy.networkPoliciesList = append(strategy.networkPoliciesList, np)
+			if metav1.HasAnnotation(np.ObjectMeta, common.InternalKey) {
+				continue
+			}
+			strategy.requiredNetworkPolicies.Insert(np.GetName())
+		} else {
+			err = fmt.Errorf("runtime.Object from NetworkPolicyList is not a NetworkPolicy: %s", obj.GetObjectKind().GroupVersionKind().String())
+			strategy.Log.Error(err, "runtim.Object is not a NetworkPolicy")
+			return nil, err
 		}
-		strategy.requiredNetworkPolicies.Insert(np.GetName())
 	}
 	return strategy, nil
 }
 
 func (s *networkPolicyStrategy) reconcileNamespaceInMesh(namespace string) error {
-	logger := s.logger.WithValues("Namespace", namespace)
-	namespaceNetworkPolicies, err := common.FetchMeshResources(s.client, networkingv1.SchemeGroupVersion.WithKind("NetworkPolicy"), s.meshNamespace, namespace)
+	logger := s.Log.WithValues("Namespace", namespace)
+	namespaceNetworkPolicies, err := s.FetchMeshResources(networkingv1.SchemeGroupVersion.WithKind("NetworkPolicy"), s.meshNamespace, namespace)
 	if err != nil {
 		logger.Error(err, "error retrieving NetworkPolicy resources for namespace")
 		return err
@@ -59,9 +64,9 @@ func (s *networkPolicyStrategy) reconcileNamespaceInMesh(namespace string) error
 	allErrors := []error{}
 
 	// add required network policies
-	existingNetworkPolicies := nameSet(namespaceNetworkPolicies)
+	existingNetworkPolicies := nameSetFromSlice(namespaceNetworkPolicies)
 	addedNetworkPolicies := sets.NewString()
-	for _, meshNetworkPolicy := range s.networkPoliciesList.Items {
+	for _, meshNetworkPolicy := range s.networkPoliciesList {
 		networkPolicyName := meshNetworkPolicy.GetName()
 		if !s.requiredNetworkPolicies.Has(networkPolicyName) {
 			// this is not required for members
@@ -69,20 +74,10 @@ func (s *networkPolicyStrategy) reconcileNamespaceInMesh(namespace string) error
 		}
 		if !existingNetworkPolicies.Has(networkPolicyName) {
 			logger.Info("creating NetworkPolicy", "NetworkPolicy", networkPolicyName)
-			networkPolicy := &unstructured.Unstructured{}
-			networkPolicy.SetGroupVersionKind(networkingv1.SchemeGroupVersion.WithKind("NetworkPolicy"))
+			networkPolicy := meshNetworkPolicy.DeepCopy()
 			networkPolicy.SetNamespace(namespace)
-			networkPolicy.SetName(networkPolicyName)
-			networkPolicy.SetLabels(meshNetworkPolicy.GetLabels())
-			networkPolicy.SetAnnotations(meshNetworkPolicy.GetAnnotations())
-			if ingress, ok, _ := unstructured.NestedSlice(meshNetworkPolicy.UnstructuredContent(), "spec", "ingress"); ok {
-				unstructured.SetNestedSlice(networkPolicy.UnstructuredContent(), ingress, "spec", "ingress")
-			}
-			if egress, ok, _ := unstructured.NestedSlice(meshNetworkPolicy.UnstructuredContent(), "spec", "egress"); ok {
-				unstructured.SetNestedSlice(networkPolicy.UnstructuredContent(), egress, "spec", "egress")
-			}
 			common.SetLabel(networkPolicy, common.MemberOfKey, s.meshNamespace)
-			err = s.client.Create(context.TODO(), networkPolicy)
+			err = s.Client.Create(context.TODO(), networkPolicy)
 			if err == nil {
 				addedNetworkPolicies.Insert(networkPolicyName)
 			} else {
@@ -97,11 +92,11 @@ func (s *networkPolicyStrategy) reconcileNamespaceInMesh(namespace string) error
 	// delete obsolete network policies
 	for networkPolicyName := range existingNetworkPolicies.Difference(s.requiredNetworkPolicies) {
 		logger.Info("deleting NetworkPolicy", "NetworkPolicy", networkPolicyName)
-		networkPolicy := &unstructured.Unstructured{}
+		networkPolicy := &networkingv1.NetworkPolicy{}
 		networkPolicy.SetGroupVersionKind(networkingv1.SchemeGroupVersion.WithKind("NetworkPolicy"))
 		networkPolicy.SetName(networkPolicyName)
 		networkPolicy.SetNamespace(namespace)
-		err = s.client.Delete(context.TODO(), networkPolicy, client.PropagationPolicy(metav1.DeletePropagationForeground))
+		err = s.Client.Delete(context.TODO(), networkPolicy, client.PropagationPolicy(metav1.DeletePropagationForeground))
 		if err != nil && !(errors.IsNotFound(err) || errors.IsGone(err)) {
 			logger.Error(err, "error deleting NetworkPolicy", "NetworkPolicy", networkPolicyName)
 			allErrors = append(allErrors, err)
@@ -116,15 +111,20 @@ func (s *networkPolicyStrategy) reconcileNamespaceInMesh(namespace string) error
 
 func (s *networkPolicyStrategy) removeNamespaceFromMesh(namespace string) error {
 	allErrors := []error{}
-	logger := s.logger.WithValues("Namespace", namespace)
-	npList, err := common.FetchMeshResources(s.client, networkingv1.SchemeGroupVersion.WithKind("NetworkPolicy"), s.meshNamespace, namespace)
+	logger := s.Log.WithValues("Namespace", namespace)
+	npList, err := s.FetchMeshResources(networkingv1.SchemeGroupVersion.WithKind("NetworkPolicy"), s.meshNamespace, namespace)
 	if err == nil {
-		for _, np := range npList.Items {
-			logger.Info("deleting NetworkPolicy for mesh", "NetworkPolicy", np.GetName())
-			err = s.client.Delete(context.TODO(), &np)
-			if err != nil {
-				logger.Error(err, "error removing NetworkPolicy associated with mesh", "NetworkPolicy", np.GetName())
-				allErrors = append(allErrors, err)
+		for _, obj := range npList {
+			if np, ok := obj.(*networkingv1.NetworkPolicy); ok {
+				logger.Info("deleting NetworkPolicy for mesh", "NetworkPolicy", np.GetName())
+				err = s.Client.Delete(context.TODO(), np)
+				if err != nil {
+					logger.Error(err, "error removing NetworkPolicy associated with mesh", "NetworkPolicy", np.GetName())
+					allErrors = append(allErrors, err)
+				}
+			} else {
+				err = fmt.Errorf("runtime.Object from NetworkPolicyList is not a NetworkPolicy: %s", obj.GetObjectKind().GroupVersionKind().String())
+				s.Log.Error(err, "runtim.Object is not a NetworkPolicy")
 			}
 		}
 	} else {

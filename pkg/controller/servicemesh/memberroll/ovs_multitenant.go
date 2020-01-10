@@ -23,8 +23,8 @@ var _ networkingStrategy = (*multitenantStrategy)(nil)
 
 func newMultitenantStrategy(r *namespaceReconciler) (*multitenantStrategy, error) {
 	return &multitenantStrategy{
-		client:                  r.client,
-		logger:                  r.logger.WithValues("NetworkStrategy", "Multitenant"),
+		client:                  r.Client,
+		logger:                  r.Log.WithValues("NetworkStrategy", "Multitenant"),
 		meshNamespace:           r.meshNamespace,
 	}, nil
 }

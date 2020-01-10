@@ -8,7 +8,7 @@ import (
 
 	"github.com/maistra/istio-operator/pkg/controller/common"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 var installCNITask sync.Once
@@ -40,7 +40,7 @@ func internalInstallCNI(mgr manager.Manager) error {
 
 	resourceManager := common.ResourceManager{
 		Client:            mgr.GetClient(),
-		PatchFactory:      common.NewPatchFactory(mgr.GetClient()),
+		PatchFactory:      common.NewPatchFactory(mgr.GetClient(), mgr.GetScheme()),
 		Log:               log,
 		OperatorNamespace: operatorNamespace,
 	}
@@ -53,10 +53,10 @@ func internalInstallCNI(mgr manager.Manager) error {
 	return nil
 }
 
-func preProcessObject(obj *unstructured.Unstructured) error {
+func preProcessObject(obj runtime.Object) error {
 	return nil
 }
 
-func postProcessObject(obj *unstructured.Unstructured) error {
+func postProcessObject(obj runtime.Object) error {
 	return nil
 }

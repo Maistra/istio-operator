@@ -3,15 +3,16 @@ package controlplane
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/maistra/istio-operator/pkg/controller/common"
 
 	v1 "github.com/maistra/istio-operator/pkg/apis/maistra/v1"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -25,37 +26,43 @@ func (r *ControlPlaneReconciler) processDeletedComponent(name string, status *v1
 	return nil
 }
 
-func (r *ControlPlaneReconciler) preprocessObject(object *unstructured.Unstructured) error {
+func (r *ControlPlaneReconciler) preprocessObject(object runtime.Object) error {
+	objectMeta, err := meta.Accessor(object)
+	if err != nil {
+		return err
+	}
 	// Add owner ref
-	if object.GetNamespace() == r.Instance.GetNamespace() {
-		object.SetOwnerReferences(r.ownerRefs)
+	if objectMeta.GetNamespace() == r.Instance.GetNamespace() {
+		objectMeta.SetOwnerReferences(r.ownerRefs)
 	} else {
 		// XXX: can't set owner reference on cross-namespace or cluster resources
 	}
 
 	// add generation annotation
-	common.SetAnnotation(object, common.MeshGenerationKey, r.meshGeneration)
+	common.SetAnnotation(objectMeta, common.MeshGenerationKey, r.meshGeneration)
 
-	switch object.GetKind() {
-	case "Kiali":
-		return r.patchKialiConfig(object)
-	case "ConfigMap":
-		if object.GetName() == "istio-grafana" {
-			return r.patchGrafanaConfig(object)
+	switch typedObject := object.(type) {
+	case *unstructured.Unstructured:
+		if typedObject.GroupVersionKind().Kind == "Kiali" {
+			return r.patchKialiConfig(typedObject)
 		}
-	case "Secret":
-		if object.GetName() == "htpasswd" {
-			return r.patchHtpasswdSecret(object)
+	case *corev1.ConfigMap:
+		if typedObject.GetName() == "istio-grafana" {
+			return r.patchGrafanaConfig(typedObject)
+		}
+	case *corev1.Secret:
+		if objectMeta.GetName() == "htpasswd" {
+			return r.patchHtpasswdSecret(typedObject)
 		}
 	}
 	return nil
 }
 
-func (r *ControlPlaneReconciler) processNewObject(object *unstructured.Unstructured) error {
+func (r *ControlPlaneReconciler) processNewObject(object runtime.Object) error {
 	return nil
 }
 
-func (r *ControlPlaneReconciler) processDeletedObject(object *unstructured.Unstructured) error {
+func (r *ControlPlaneReconciler) processDeletedObject(object runtime.Object) error {
 	return nil
 }
 
@@ -160,7 +167,7 @@ func (r *ControlPlaneReconciler) patchKialiConfig(object *unstructured.Unstructu
 		return fmt.Errorf("could not set grafana enabled flag in kiali CR: %s", err)
 	}
 
-	rawPassword, err := r.getRawHtPasswd(object)
+	rawPassword, err := r.getRawHtPasswd(object.GetNamespace())
 	if err != nil {
 		return err
 	}
@@ -177,36 +184,5 @@ func (r *ControlPlaneReconciler) patchKialiConfig(object *unstructured.Unstructu
 		return fmt.Errorf("could not set tracing password in kiali CR: %s", err)
 	}
 
-	return nil
-}
-
-func (r *ControlPlaneReconciler) waitForWebhookCABundleInitialization(object *unstructured.Unstructured) error {
-	name := object.GetName()
-	kind := object.GetKind()
-	r.Log.Info("waiting for webhook CABundle initialization", kind, name)
-	err := wait.ExponentialBackoff(wait.Backoff{Duration: 6 * time.Second, Steps: 10, Factor: 1.1}, func() (bool, error) {
-		err := r.Client.Get(context.TODO(), client.ObjectKey{Name: name}, object)
-		if err == nil {
-			webhooks, found, _ := unstructured.NestedSlice(object.UnstructuredContent(), "webhooks")
-			if !found || len(webhooks) == 0 {
-				return true, nil
-			}
-			for _, webhook := range webhooks {
-				typedWebhook, _ := webhook.(map[string]interface{})
-				if caBundle, found, _ := unstructured.NestedString(typedWebhook, "clientConfig", "caBundle"); !found || len(caBundle) == 0 {
-					return false, nil
-				}
-			}
-			return true, nil
-		} else if errors.IsNotFound(err) {
-			r.Log.Error(nil, "attempting to wait on unknown webhook", kind, name)
-			return true, nil
-		}
-		r.Log.Error(err, "error waiting for webhook CABundle to become initialized", object.GetKind(), name)
-		return false, err
-	})
-	if err != nil {
-		r.Log.Error(nil, "webhook CABundle failed to become initialized in a timely manner", kind, name)
-	}
 	return nil
 }

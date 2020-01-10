@@ -51,12 +51,7 @@ func Add(mgr manager.Manager) error {
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) *MemberReconciler {
 	return &MemberReconciler{
-		ResourceManager: common.ResourceManager{
-			Client:       mgr.GetClient(),
-			PatchFactory: common.NewPatchFactory(mgr.GetClient()),
-			Log:          log,
-		},
-		scheme:        mgr.GetScheme(),
+		ResourceManager: common.NewResourceManager(mgr.GetClient(), mgr.GetScheme(), log, common.GetOperatorNamespace()),
 		eventRecorder: mgr.GetRecorder(controllerName),
 	}
 }
@@ -155,7 +150,6 @@ type MemberReconciler struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	common.ResourceManager
-	scheme        *runtime.Scheme
 	eventRecorder record.EventRecorder
 }
 

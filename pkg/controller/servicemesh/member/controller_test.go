@@ -367,7 +367,7 @@ func createClientAndReconciler(t *testing.T, clientObjects ...runtime.Object) (c
 	cl := fake.NewFakeClientWithSchemeAndTracker(scheme.Scheme, &enhancedTracker, clientObjects...)
 	fakeEventRecorder := &record.FakeRecorder{}
 
-	r := &MemberReconciler{ResourceManager: common.ResourceManager{Client: cl, PatchFactory: common.NewPatchFactory(cl), Log: log}, scheme: s, eventRecorder: fakeEventRecorder}
+	r := &MemberReconciler{ResourceManager: common.NewResourceManager(cl, s, log, ""), eventRecorder: fakeEventRecorder}
 	return cl, &enhancedTracker, r
 }
 
