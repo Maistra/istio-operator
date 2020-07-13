@@ -14,6 +14,8 @@
 
 -include Makefile.overrides
 
+ISTIO_COMMIT           ?= $(shell source ./deps.sh && echo $${ISTIO_COMMIT})
+
 MAISTRA_VERSION        ?= 1.2.0
 MAISTRA_BRANCH         ?= maistra-1.2
 REPLACES_PRODUCT_CSV   ?= 1.1.0
@@ -141,7 +143,7 @@ collect-1.1-templates:
 ################################################################################
 .PHONY: update-1.2-charts
 update-1.2-charts:
-	HELM_DIR=${RESOURCES_DIR}/helm/v1.2 ISTIO_VERSION=1.4.0 ${SOURCE_DIR}/build/download-charts.sh
+	MAISTRA_BRANCH=${ISTIO_COMMIT} HELM_DIR=${RESOURCES_DIR}/helm/v1.2 ISTIO_VERSION=1.4.0 ${SOURCE_DIR}/build/download-charts.sh
 	HELM_DIR=${RESOURCES_DIR}/helm/v1.2 ${SOURCE_DIR}/build/patch-container-image.sh
 
 .PHONY: collect-1.2-charts
@@ -225,5 +227,12 @@ build: update-generated-code update-charts update-templates compile
 .PHONY: image
 image: build collect-resources
 	${CONTAINER_CLI} build --no-cache -t "${IMAGE}" -f ${SOURCE_DIR}/build/Dockerfile --build-arg build_type=${BUILD_TYPE} .
+
+################################################################################
+# build operator and all dependent containers
+################################################################################
+.PHONY: release
+release: update-1.2-charts
+	source ./deps.sh && ./build/maistra-release.sh
 
 .DEFAULT_GOAL := build
