@@ -26,6 +26,7 @@ import (
 
 const networkTypeOpenShiftSDN = "OpenShiftSDN"
 const networkTypeCalico = "Calico"
+const networkTypeNsxNcp = "ncp"
 
 type namespaceReconciler struct {
 	common.ControllerResources
@@ -125,6 +126,9 @@ func (r *namespaceReconciler) initializeNetworkingStrategy(ctx context.Context) 
 				}
 			case strings.ToLower(networkTypeCalico):
 				log.Info("Network Strategy Calico:NetworkPolicy")
+				r.networkingStrategy, err = newNetworkPolicyStrategy(ctx, r.Client, r.meshNamespace)
+			case string.ToLower(networkTypeNsxNcp):
+				log.Info("Network Strategy NSX-NCP:NetworkPolicy")
 				r.networkingStrategy, err = newNetworkPolicyStrategy(ctx, r.Client, r.meshNamespace)
 			default:
 				return fmt.Errorf("unsupported network type: %s", networkType)
