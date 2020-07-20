@@ -20,19 +20,18 @@ spec:
       log-level: debug
       query:
         base-path: /
-    annotations:
-      {{- range $key, $value := .Values.jaeger.annotations }}
-        {{ $key }}: {{ $value | quote }}
-      {{- end }}
 
+{{- if and .Values.jaeger.hub .Values.jaeger.tag .Values.jaeger.agentImage }}
   agent:
-    {{- if and .Values.jaeger.hub .Values.jaeger.tag .Values.jaeger.agentImage }}
     image: {{ .Values.jaeger.hub }}/{{ .Values.jaeger.agentImage }}:{{ .Values.jaeger.tag }}
+{{- end }}
+
+{{- if .Values.jaeger.annotations }}
+  annotations:
+    {{- range $key, $value := .Values.jaeger.annotations }}
+      {{ $key }}: {{ $value | quote }}
     {{- end }}
-    annotations:
-      {{- range $key, $value := .Values.jaeger.annotations }}
-        {{ $key }}: {{ $value | quote }}
-      {{- end }}
+{{- end }}
 
   storage:
     options:
@@ -47,10 +46,12 @@ spec:
     enabled: {{ .Values.ingress.enabled }}
     # XXX: should this be parameterized?
     security: oauth-proxy
+{{- if .Values.ingress.annotations }}
     annotations:
       {{- range $key, $value := .Values.ingress.annotations }}
         {{ $key }}: {{ $value | quote }}
       {{- end }}
+{{- end }}
     openshift:
       sar: '{"namespace": "{{ .Release.Namespace }}", "resource": "pods", "verb": "get"}'
       htpasswdFile: /etc/proxy/htpasswd/auth
