@@ -38,6 +38,8 @@ func (r *controlPlaneInstanceReconciler) processComponentManifests(ctx context.C
 	delete(r.renderings, chartName)
 
 	for _, rendering := range renderings {
+		// we need to check the target namespace, as we can only verify readiness
+		// for objects in the control plane's namespace at this time
 		if r.hasReadiness(rendering.Head.Kind) {
 			return true, nil
 		}

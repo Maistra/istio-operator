@@ -146,7 +146,7 @@ func (r *controlPlaneInstanceReconciler) Reconcile(ctx context.Context) (result 
 				reconciliationMessage = "Spec is invalid"
 			} else if versions.IsDependencyMissingError(err) {
 				reconciliationReason = status.ConditionReasonDependencyMissingError
-				reconciliationMessage = fmt.Sprintf( "Dependency %q is missing", versions.GetMissingDependency(err))
+				reconciliationMessage = fmt.Sprintf("Dependency %q is missing", versions.GetMissingDependency(err))
 			} else {
 				reconciliationReason = status.ConditionReasonReconcileError
 				reconciliationMessage = "Error rendering helm charts"
@@ -248,7 +248,7 @@ func (r *controlPlaneInstanceReconciler) Reconcile(ctx context.Context) (result 
 	} else if r.waitForComponents.Len() > 0 {
 		// if we've already begun reconciling, make sure we weren't waiting for
 		// the last component to become ready
-		readyComponents, _, readinessErr := r.calculateComponentReadiness(ctx)
+		readyComponents, unreadyComponents, readinessErr := r.calculateComponentReadiness(ctx)
 		if readinessErr != nil {
 			// error calculating readiness
 			reconciliationReason = status.ConditionReasonProbeError
@@ -259,7 +259,7 @@ func (r *controlPlaneInstanceReconciler) Reconcile(ctx context.Context) (result 
 		}
 
 		r.waitForComponents.Delete(readyComponents.List()...)
-		if r.waitForComponents.Len() > 0 {
+		if unreadyComponents.Intersection(r.waitForComponents).Len() > 0 {
 			reconciliationReason, reconciliationMessage, err = r.pauseReconciliation(ctx)
 			return
 		}
@@ -304,14 +304,16 @@ func (r *controlPlaneInstanceReconciler) Reconcile(ctx context.Context) (result 
 		}
 
 		if r.waitForComponents.Len() > 0 {
-			readyComponents, _, readyErr := r.calculateComponentReadiness(ctx)
+			readyComponents, unreadyComponents, readyErr := r.calculateComponentReadiness(ctx)
 			if readyErr != nil {
 				reconciliationReason, reconciliationMessage, err = r.pauseReconciliation(ctx)
 				return
 			}
 
 			r.waitForComponents.Delete(readyComponents.List()...)
-			if r.waitForComponents.Len() > 0 {
+			// it may be that some components have been incorrectly marked as needing a ready check,
+			// e.g. gateways in other namespaces
+			if unreadyComponents.Intersection(r.waitForComponents).Len() > 0 {
 				reconciliationReason, reconciliationMessage, err = r.pauseReconciliation(ctx)
 				return
 			}

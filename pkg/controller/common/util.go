@@ -158,6 +158,8 @@ func GetMeshNamespaces(controlPlaneNamespace string, smmr *v1.ServiceMeshMemberR
 	}
 	meshNamespaces := sets.NewString(controlPlaneNamespace)
 	if smmr != nil {
+		// XXX: I don't think this can work, since ConfiguredMembers won't be set
+		// until after the initial install succeeds
 		meshNamespaces.Insert(smmr.Status.ConfiguredMembers...)
 	}
 	return meshNamespaces

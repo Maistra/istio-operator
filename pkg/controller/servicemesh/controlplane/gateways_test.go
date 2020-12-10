@@ -2,6 +2,7 @@ package controlplane
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	v1 "github.com/maistra/istio-operator/pkg/apis/maistra/v1"
@@ -75,7 +76,7 @@ func TestAdditionalIngressGatewayInstall(t *testing.T) {
 			}),
 			create: IntegrationTestValidation{
 				Verifier: ActionVerifier(
-					Verify("create").On("deployments").Named(additionalGatewayName).In(controlPlaneNamespace).Passes(ExpectedDefaultLabelGatewayCreate(additionalGatewayName+"."+controlPlaneNamespace)),
+					Verify("create").On("deployments").Named(additionalGatewayName).In(controlPlaneNamespace).Passes(ExpectedDefaultLabelGatewayCreate(additionalGatewayName + "." + controlPlaneNamespace)),
 				),
 				Assertions: ActionAssertions{},
 			},
@@ -127,6 +128,88 @@ func TestAdditionalIngressGatewayInstall(t *testing.T) {
 		},
 	}
 	RunSimpleInstallTest(t, testCases)
+}
+
+func TestClusterGatewaysOutsideCPNamespace(t *testing.T) {
+	enabled := true
+	appNamespace := "app-namespace"
+	smmr := &v1.ServiceMeshMemberRoll{
+		ObjectMeta: metav1.ObjectMeta{Name: "default", Namespace: controlPlaneNamespace},
+		Spec: v1.ServiceMeshMemberRollSpec{
+			Members: []string{appNamespace},
+		},
+		Status: v1.ServiceMeshMemberRollStatus{
+			ConfiguredMembers: []string{appNamespace},
+		},
+	}
+
+	testCases := []IntegrationTestCase{
+		{
+			name: "ingress",
+			smcp: New20SMCPResource(controlPlaneName, controlPlaneNamespace, &v2.ControlPlaneSpec{
+				Gateways: &v2.GatewaysConfig{
+					ClusterIngress: &v2.ClusterIngressGatewayConfig{
+						IngressGatewayConfig: v2.IngressGatewayConfig{
+							GatewayConfig: v2.GatewayConfig{
+								Enablement: v2.Enablement{
+									Enabled: &enabled,
+								},
+								Namespace: appNamespace,
+							},
+						},
+					},
+				},
+			}),
+			resources: []runtime.Object{smmr},
+			create: IntegrationTestValidation{
+				Verifier: VerifyActions(
+					Verify("create").On("deployments").Named("istio-ingressgateway").In(appNamespace).Passes(ExpectedExternalGatewayCreate),
+				),
+				Assertions: ActionAssertions{
+					&pausedStatusUpdate{ActionAssertion: Assert("patch").On("servicemeshcontrolplanes/status").In(controlPlaneNamespace).IsNotSeen()},
+				},
+			},
+		},
+		{
+			name: "egress",
+			smcp: New20SMCPResource(controlPlaneName, controlPlaneNamespace, &v2.ControlPlaneSpec{
+				Gateways: &v2.GatewaysConfig{
+					ClusterEgress: &v2.EgressGatewayConfig{
+						GatewayConfig: v2.GatewayConfig{
+							Enablement: v2.Enablement{
+								Enabled: &enabled,
+							},
+							Namespace: appNamespace,
+						},
+					},
+				},
+			}),
+			resources: []runtime.Object{smmr},
+			create: IntegrationTestValidation{
+				Verifier: VerifyActions(
+					Verify("create").On("deployments").Named("istio-egressgateway").In(appNamespace).Passes(ExpectedExternalGatewayCreate),
+				),
+				Assertions: ActionAssertions{
+					&pausedStatusUpdate{ActionAssertion: Assert("patch").On("servicemeshcontrolplanes/status").In(controlPlaneNamespace).IsNotSeen()},
+				},
+			},
+		},
+	}
+	RunSimpleInstallTest(t, testCases)
+}
+
+type pausedStatusUpdate struct {
+	ActionAssertion
+}
+
+var _ ActionAssertion = (*pausedStatusUpdate)(nil)
+
+func (a *pausedStatusUpdate) React(action clienttesting.Action) (bool, runtime.Object, error) {
+	patchAction := action.(clienttesting.PatchAction)
+	if strings.Contains(string(patchAction.GetPatch()), "Pausing") {
+		return a.ActionAssertion.React(action)
+	}
+	return false, nil, nil
 }
 
 func ExpectedDefaultLabelGatewayCreate(expected string) func(action clienttesting.Action) error {
