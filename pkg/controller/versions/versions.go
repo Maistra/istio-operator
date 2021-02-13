@@ -12,6 +12,7 @@ import (
 	v2 "github.com/maistra/istio-operator/pkg/apis/maistra/v2"
 	"github.com/maistra/istio-operator/pkg/controller/common"
 	"github.com/maistra/istio-operator/pkg/controller/common/cni"
+	ver "github.com/maistra/istio-operator/pkg/version"
 )
 
 const (
@@ -61,7 +62,18 @@ func init() {
 				// special handling for legacy case
 				stringToVersion[""] = v
 			}
+		}
+	}
+	minimumSupportedVersion := ver.Info.MinimumSupportedVersion
+	minVersion := stringToVersion[minimumSupportedVersion]
+	if minVersion == InvalidVersion {
+		panic(fmt.Sprintf("invalid minimum supported version: %v", minimumSupportedVersion))
+	}
+
+	for v := range versionToString {
+		if v >= minVersion {
 			supportedVersions = append(supportedVersions, v)
+			supportedVersionNames = append(supportedVersionNames, v.String())
 		}
 	}
 }
@@ -91,6 +103,7 @@ type Version interface {
 	GetUserTemplatesDir() string
 	GetDefaultTemplatesDir() string
 	GetCNINetworkName() string
+	IsSupported() bool
 }
 
 // ValidationStrategy is an interface used by the validating webhook for validating SMCP resources.
@@ -121,6 +134,10 @@ type VersionStrategy interface {
 // GetSupportedVersions returns a list of versions supported by this operator
 func GetSupportedVersions() []Version {
 	return supportedVersions
+}
+
+func GetSupportedVersionNames() []string {
+	return supportedVersionNames
 }
 
 type version int
@@ -154,6 +171,16 @@ func (v version) GetCNINetworkName() string {
 		return network
 	}
 	panic(fmt.Sprintf("invalid version: %d", v))
+}
+
+func (v version) IsSupported() (supported bool) {
+	for _, version := range supportedVersions {
+		if version == v {
+			supported = true
+			return
+		}
+	}
+	return
 }
 
 // ParseVersion returns a version for the specified string
@@ -226,3 +253,4 @@ var versionToCNINetwork = make(map[version]string)
 var versionToStrategy = make(map[version]VersionStrategy)
 var stringToVersion = make(map[string]version)
 var supportedVersions []Version
+var supportedVersionNames []string
