@@ -134,7 +134,7 @@ func (s *networkPolicyStrategy) removeNamespaceFromMesh(ctx context.Context, nam
 		for _, np := range npList.Items {
 			logger.Info("deleting NetworkPolicy for mesh", "NetworkPolicy", np.GetName())
 			err = s.Client.Delete(ctx, &np)
-			if err != nil {
+			if err != nil && !(errors.IsNotFound(err) || errors.IsGone(err)) {
 				logger.Error(err, "error removing NetworkPolicy associated with mesh", "NetworkPolicy", np.GetName())
 				allErrors = append(allErrors, err)
 			}

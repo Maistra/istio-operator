@@ -174,7 +174,7 @@ func (r *namespaceReconciler) removeNamespaceFromMesh(ctx context.Context, names
 		for _, rb := range rbList.Items {
 			logger.Info("deleting RoleBinding for mesh ServiceAccount", "RoleBinding", rb.GetName())
 			err = r.Client.Delete(ctx, &rb)
-			if err != nil {
+			if err != nil && !(apierrors.IsNotFound(err) || apierrors.IsGone(err)) {
 				logger.Error(err, "error removing RoleBinding associated with mesh", "RoleBinding", rb.GetName())
 				allErrors = append(allErrors, err)
 			}
@@ -360,7 +360,7 @@ func (r *namespaceReconciler) addNetworkAttachmentDefinition(ctx context.Context
 	for _, nad := range nadList.Items {
 		if nad.GetName() == netAttachDefName {
 			found = true
-		} else if err := r.Client.Delete(ctx, &nad, client.PropagationPolicy(metav1.DeletePropagationOrphan)); err != nil {
+		} else if err := r.Client.Delete(ctx, &nad, client.PropagationPolicy(metav1.DeletePropagationOrphan)); err != nil && !(apierrors.IsNotFound(err) || apierrors.IsGone(err)) {
 			allErrors = append(allErrors, err)
 		}
 	}
@@ -400,7 +400,7 @@ func (r *namespaceReconciler) removeNetworkAttachmentDefinition(ctx context.Cont
 	var allErrors []error
 	for _, nad := range nadList.Items {
 		reqLogger.Info("deleting NetworkAttachmentDefinition", "NetworkAttachmentDefinition", nad.GetName())
-		if err := r.Client.Delete(ctx, &nad, client.PropagationPolicy(metav1.DeletePropagationOrphan)); err != nil {
+		if err := r.Client.Delete(ctx, &nad, client.PropagationPolicy(metav1.DeletePropagationOrphan)); err != nil && !(apierrors.IsNotFound(err) || apierrors.IsGone(err)) {
 			allErrors = append(allErrors, err)
 		}
 	}
