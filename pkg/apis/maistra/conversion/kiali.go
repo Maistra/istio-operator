@@ -66,7 +66,7 @@ func populateKialiAddonValues(kiali *v2.KialiAddonConfig, values map[string]inte
 		if resources != nil {
 			if values, err := toValues(resources); err == nil {
 				if len(values) > 0 {
-					if err := setHelmValue(kialiValues, "deployment.resources", values); err != nil {
+					if err := setHelmValue(kialiValues, "deployment_resources", values); err != nil {
 						return err
 					}
 				}
@@ -79,7 +79,7 @@ func populateKialiAddonValues(kiali *v2.KialiAddonConfig, values map[string]inte
 			if nodeAffinity != nil {
 				if values, err := toValues(nodeAffinity); err == nil {
 					if len(values) > 0 {
-						if err := setHelmValue(kialiValues, "deployment.affinity.node", values); err != nil {
+						if err := setHelmValue(kialiValues, "deployment_affinity.node", values); err != nil {
 							return err
 						}
 					}
@@ -90,7 +90,7 @@ func populateKialiAddonValues(kiali *v2.KialiAddonConfig, values map[string]inte
 			if podAffinity != nil {
 				if values, err := toValues(podAffinity); err == nil {
 					if len(values) > 0 {
-						if err := setHelmValue(kialiValues, "deployment.affinity.pod", values); err != nil {
+						if err := setHelmValue(kialiValues, "deployment_affinity.pod", values); err != nil {
 							return err
 						}
 					}
@@ -101,7 +101,7 @@ func populateKialiAddonValues(kiali *v2.KialiAddonConfig, values map[string]inte
 			if podAntiAffinity != nil {
 				if values, err := toValues(podAntiAffinity); err == nil {
 					if len(values) > 0 {
-						if err := setHelmValue(kialiValues, "deployment.affinity.pod_anti", values); err != nil {
+						if err := setHelmValue(kialiValues, "deployment_affinity.pod_anti", values); err != nil {
 							return err
 						}
 					}
@@ -113,7 +113,7 @@ func populateKialiAddonValues(kiali *v2.KialiAddonConfig, values map[string]inte
 		if nodeSelector != nil {
 			if values, err := toValues(nodeSelector); err == nil {
 				if len(values) > 0 {
-					if err := setHelmValue(kialiValues, "deployment.nodeSelector", values); err != nil {
+					if err := setHelmValue(kialiValues, "deployment_nodeSelector", values); err != nil {
 						return err
 					}
 				}
@@ -128,7 +128,7 @@ func populateKialiAddonValues(kiali *v2.KialiAddonConfig, values map[string]inte
 			if tolerations, err := sliceToValues(untypedSlice); err != nil {
 				return err
 			} else if len(tolerations) > 0 {
-				if err := setHelmValue(kialiValues, "deployment.tolerations", tolerations); err != nil {
+				if err := setHelmValue(kialiValues, "deployment_tolerations", tolerations); err != nil {
 					return err
 				}
 			}
@@ -250,7 +250,7 @@ func populateKialiAddonConfig(in *v1.HelmValues, out *v2.KialiAddonConfig) (bool
 	deploymentConfig := &v2.KialiDeploymentConfig{}
 	setDeployment := false
 
-	if resources, ok, err := kialiValues.GetAndRemoveMap("deployment.resources"); ok {
+	if resources, ok, err := kialiValues.GetAndRemoveMap("deployment_resources"); ok {
 		if len(resources) > 0 {
 			deploymentConfig.Resources = &corev1.ResourceRequirements{}
 			if err := fromValues(resources, deploymentConfig.Resources); err != nil {
@@ -265,7 +265,7 @@ func populateKialiAddonConfig(in *v1.HelmValues, out *v2.KialiAddonConfig) (bool
 	affinity := &corev1.Affinity{}
 	setDeploymentAffinity := false
 
-	if nodeAffinity, ok, err := kialiValues.GetAndRemoveMap("deployment.affinity.node"); ok {
+	if nodeAffinity, ok, err := kialiValues.GetAndRemoveMap("deployment_affinity.node"); ok {
 		if len(nodeAffinity) > 0 {
 			affinity.NodeAffinity = &corev1.NodeAffinity{}
 			if err := fromValues(nodeAffinity, affinity.NodeAffinity); err != nil {
@@ -277,7 +277,7 @@ func populateKialiAddonConfig(in *v1.HelmValues, out *v2.KialiAddonConfig) (bool
 		return false, err
 	}
 
-	if podAffinity, ok, err := kialiValues.GetAndRemoveMap("deployment.affinity.pod"); ok {
+	if podAffinity, ok, err := kialiValues.GetAndRemoveMap("deployment_affinity.pod"); ok {
 		if len(podAffinity) > 0 {
 			affinity.PodAffinity = &corev1.PodAffinity{}
 			if err := fromValues(podAffinity, affinity.PodAffinity); err != nil {
@@ -289,7 +289,7 @@ func populateKialiAddonConfig(in *v1.HelmValues, out *v2.KialiAddonConfig) (bool
 		return false, err
 	}
 
-	if podAntiAffinity, ok, err := kialiValues.GetAndRemoveMap("deployment.affinity.pod_anti"); ok {
+	if podAntiAffinity, ok, err := kialiValues.GetAndRemoveMap("deployment_affinity.pod_anti"); ok {
 		if len(podAntiAffinity) > 0 {
 			affinity.PodAntiAffinity = &corev1.PodAntiAffinity{}
 			if err := fromValues(podAntiAffinity, affinity.PodAntiAffinity); err != nil {
@@ -306,8 +306,7 @@ func populateKialiAddonConfig(in *v1.HelmValues, out *v2.KialiAddonConfig) (bool
 		deploymentConfig.Affinity = affinity
 	}
 
-
-	if nodeSelector, ok, err := kialiValues.GetAndRemoveStringMap("deployment.nodeSelector"); ok {
+	if nodeSelector, ok, err := kialiValues.GetAndRemoveStringMap("deployment_nodeSelector"); ok {
 		if len(nodeSelector) > 0 {
 			deploymentConfig.NodeSelector = nodeSelector
 			setDeployment = true
@@ -316,19 +315,7 @@ func populateKialiAddonConfig(in *v1.HelmValues, out *v2.KialiAddonConfig) (bool
 		return false, err
 	}
 
-	if resources, ok, err := kialiValues.GetAndRemoveMap("deployment.resources"); ok {
-		if len(resources) > 0 {
-			deploymentConfig.Resources = &corev1.ResourceRequirements{}
-			if err := fromValues(resources, deploymentConfig.Resources); err != nil {
-				return false, err
-			}
-			setDeployment = true
-		}
-	} else if err != nil {
-		return false, err
-	}
-
-	if tolerations, ok, err := kialiValues.GetAndRemoveSlice("deployment.tolerations"); ok && len(tolerations) > 0 {
+	if tolerations, ok, err := kialiValues.GetAndRemoveSlice("deployment_tolerations"); ok && len(tolerations) > 0 {
 		deploymentConfig.Tolerations = make([]corev1.Toleration, len(tolerations))
 		setDeployment = true
 		for index, tolerationValues := range tolerations {
@@ -340,7 +327,7 @@ func populateKialiAddonConfig(in *v1.HelmValues, out *v2.KialiAddonConfig) (bool
 		return false, err
 	}
 
-	if setDeployment == true {
+	if setDeployment {
 		setInstall = true
 		install.Deployment = deploymentConfig
 	}

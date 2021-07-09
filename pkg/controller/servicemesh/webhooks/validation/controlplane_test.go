@@ -1075,6 +1075,147 @@ func TestControlPlaneValidation(t *testing.T) {
 	}
 }
 
+func TestFullAffinityOnlySupportedForKiali(t *testing.T) {
+	cases := []struct {
+		name                   string
+		allowedForKiali        bool
+		componentRuntimeConfig maistrav2.ComponentRuntimeConfig
+	}{
+		{
+			name: "nodeAffinity",
+			allowedForKiali: true,
+			componentRuntimeConfig: maistrav2.ComponentRuntimeConfig{
+				Pod: &maistrav2.PodRuntimeConfig{
+					Affinity: &maistrav2.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+								NodeSelectorTerms: []corev1.NodeSelectorTerm{
+									{
+										MatchFields: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "key1",
+												Operator: "op1",
+												Values:   []string{"value11", "value12"},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "podAffinity",
+			allowedForKiali: true,
+			componentRuntimeConfig: maistrav2.ComponentRuntimeConfig{
+				Pod: &maistrav2.PodRuntimeConfig{
+					Affinity: &maistrav2.Affinity{
+						PodAffinity: &corev1.PodAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+								{
+									LabelSelector: &metav1.LabelSelector{
+										MatchLabels: map[string]string{
+											"fookey": "foovalue",
+										},
+									},
+									Namespaces:  []string{"ns1", "ns2"},
+									TopologyKey: "my-topology-key",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "podAntiAffinity.corev1",
+			allowedForKiali: true,
+			componentRuntimeConfig: maistrav2.ComponentRuntimeConfig{
+				Pod: &maistrav2.PodRuntimeConfig{
+					Affinity: &maistrav2.Affinity{
+						PodAntiAffinity: maistrav2.PodAntiAffinity{
+							PodAntiAffinity: &corev1.PodAntiAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+									{
+										LabelSelector: &metav1.LabelSelector{
+											MatchLabels: map[string]string{
+												"bazkey": "bazvalue",
+											},
+										},
+										Namespaces:  []string{"ns5", "ns6"},
+										TopologyKey: "my-topology-key3",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "podAntiAffinity.maistra",
+			allowedForKiali: false,
+			componentRuntimeConfig: maistrav2.ComponentRuntimeConfig{
+				Pod: &maistrav2.PodRuntimeConfig{
+					Affinity: &maistrav2.Affinity{
+						PodAntiAffinity: maistrav2.PodAntiAffinity{
+							RequiredDuringScheduling: []maistrav2.PodAntiAffinityTerm{
+								{
+									LabelSelectorRequirement: metav1.LabelSelectorRequirement{
+										Key:      "key1",
+										Operator: "op1",
+										Values:   []string{"value11", "value12"},
+									},
+									TopologyKey: "my-topology-key",
+								},
+							},
+							PreferredDuringScheduling: nil,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, component := range maistrav2.ControlPlaneComponentNames {
+		for _, tc := range cases {
+			t.Run(string(component)+"."+tc.name, func(t *testing.T) {
+				validator, _, _ := createControlPlaneValidatorTestFixture()
+
+				controlPlane :=
+					&maistrav2.ServiceMeshControlPlane{
+						ObjectMeta: meta.ObjectMeta{
+							Name:      "some-smcp",
+							Namespace: "istio-system",
+						},
+						Spec: maistrav2.ControlPlaneSpec{
+							Version: versions.V2_0.String(),
+							Runtime: &maistrav2.ControlPlaneRuntimeConfig{
+								Components: map[maistrav2.ControlPlaneComponentName]*maistrav2.ComponentRuntimeConfig{
+									component: &tc.componentRuntimeConfig,
+								},
+							},
+						},
+					}
+
+				response := validator.Handle(ctx, createCreateRequest(controlPlane))
+				if (tc.allowedForKiali && component == maistrav2.ControlPlaneComponentNameKiali) ||
+					(!tc.allowedForKiali && component != maistrav2.ControlPlaneComponentNameKiali) {
+					var reason string
+					if response.Result != nil {
+						reason = response.Result.Message
+					}
+					assert.True(response.Allowed, "Expected validator to accept valid ServiceMeshControlPlane, but rejected: "+reason, t)
+				} else {
+					assert.False(response.Allowed, "Expected validator to reject invalid ServiceMeshControlPlane", t)
+				}
+			})
+		}
+	}
+}
+
 func TestUpdateOfValidControlPlane(t *testing.T) {
 	oldControlPlane := newControlPlaneWithVersion("my-smcp", "istio-system", "v1.0")
 	validator, _, _ := createControlPlaneValidatorTestFixture(oldControlPlane)

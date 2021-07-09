@@ -36,23 +36,52 @@ spec:
     view_only_mode: {{ .Values.kiali.dashboard.viewOnlyMode }}
 {{- end }}
 {{- end }}
-{{- if .Values.kiali.deployment }}
-{{- if .Values.kiali.deployment.resources }}
+
+{{- if or .Values.kiali.resources .Values.kiali.deployment_resources }}
     resources:
-{{ toYaml .Values.kiali.deployment.resources | indent 6 }}
+    {{- if .Values.kiali.resources}}
+{{ toYaml .Values.kiali.resources | indent 6 }}
+    {{- else }}
+{{ toYaml .Values.kiali.deployment_resources | indent 6 }}
+    {{- end }}
 {{- end }}
-{{- if .Values.kiali.deployment.tolerations }}
+
+{{- if or .Values.kiali.tolerations .Values.kiali.deployment_tolerations }}
     tolerations:
-{{ toYaml .Values.kiali.deployment.tolerations | indent 6 }}
+    {{- if .Values.kiali.tolerations }}
+{{ toYaml .Values.kiali.tolerations | indent 6 }}
+    {{- else }}
+{{ toYaml .Values.kiali.deployment_tolerations | indent 6 }}
+    {{- end }}
 {{- end }}
-{{- if .Values.kiali.deployment.nodeSelector }}
+
+{{- if or .Values.kiali.nodeSelector .Values.kiali.deployment_nodeSelector }}
     node_selector:
-{{ toYaml .Values.kiali.deployment.nodeSelector | indent 6 }}
+    {{- if .Values.kiali.nodeSelector }}
+{{ toYaml .Values.kiali.nodeSelector | indent 6 }}
+    {{- else }}
+{{ toYaml .Values.kiali.deployment_nodeSelector | indent 6 }}
+    {{- end }}
 {{- end }}
-{{- if .Values.kiali.deployment.affinity }}
+
+{{- if or .Values.kiali.affinity .Values.kiali.deployment_affinity }}
     affinity:
-{{ toYaml .Values.kiali.deployment.affinity | indent 6 }}
-{{- end }}
+    {{- if .Values.kiali.affinity }}
+        {{- if .Values.kiali.affinity.nodeAffinity }}
+      node:
+{{ toYaml .Values.kiali.affinity.nodeAffinity | indent 8 }}
+        {{- end }}
+        {{- if .Values.kiali.affinity.podAffinity }}
+      pod:
+{{ toYaml .Values.kiali.affinity.podAffinity | indent 8 }}
+        {{- end }}
+        {{- if .Values.kiali.affinity.podAntiAffinity }}
+      pod_anti:
+{{ toYaml .Values.kiali.affinity.podAntiAffinity | indent 8 }}
+        {{- end }}
+    {{- else }}
+{{ toYaml .Values.kiali.deployment_affinity | indent 6 }}
+    {{- end }}
 {{- end }}
 
   external_services:

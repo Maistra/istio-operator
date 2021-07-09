@@ -212,8 +212,11 @@ func populatePodHelmValues(pod *v2.PodRuntimeConfig, componentValues map[string]
 		}
 	}
 	if pod.Affinity != nil {
-		// NodeAffinity is not supported, only NodeSelector may be used.
-		// PodAffinity is not supported.
+		err := populateAffinityValues(pod.Affinity, componentValues)
+		if err != nil {
+			return err
+		}
+
 		if len(pod.Affinity.PodAntiAffinity.RequiredDuringScheduling) > 0 {
 			podAntiAffinityLabelSelector := convertAntiAffinityTermsToHelmValues(pod.Affinity.PodAntiAffinity.RequiredDuringScheduling)
 			if len(podAntiAffinityLabelSelector) > 0 {
@@ -353,6 +356,39 @@ func populateCommonContainerConfigValues(containerConfig *v2.CommonContainerConf
 		}
 	}
 
+	return nil
+}
+
+func populateAffinityValues(affinity *v2.Affinity, helmValues map[string]interface{}) error {
+	if affinity.NodeAffinity != nil {
+		if values, err := toValues(affinity.NodeAffinity); err == nil {
+			if len(values) > 0 {
+				if err := setHelmValue(helmValues, "affinity.nodeAffinity", values); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	if affinity.PodAffinity != nil {
+		if values, err := toValues(affinity.PodAffinity); err == nil {
+			if len(values) > 0 {
+				if err := setHelmValue(helmValues, "affinity.podAffinity", values); err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	if affinity.PodAntiAffinity.PodAntiAffinity != nil {
+		if values, err := toValues(affinity.PodAntiAffinity.PodAntiAffinity); err == nil {
+			if len(values) > 0 {
+				if err := setHelmValue(helmValues, "affinity.podAntiAffinity", values); err != nil {
+					return err
+				}
+			}
+		}
+	}
 	return nil
 }
 
@@ -504,6 +540,64 @@ func runtimeValuesToPodRuntimeConfig(in *v1.HelmValues, out *v2.PodRuntimeConfig
 	} else if err != nil {
 		return false, err
 	}
+
+
+
+	if nodeAffinity, ok, err := in.GetAndRemoveMap("affinity.nodeAffinity"); ok {
+		if out.Affinity == nil {
+			out.Affinity = &v2.Affinity{}
+		} else {
+			// clear this out
+			out.Affinity.NodeAffinity = nil
+		}
+
+		if len(nodeAffinity) > 0 {
+			out.Affinity.NodeAffinity = &corev1.NodeAffinity{}
+			if err := fromValues(nodeAffinity, out.Affinity.NodeAffinity); err != nil {
+				return false, err
+			}
+			setValues = true
+		}
+	} else if err != nil {
+		return false, err
+	}
+	if podAffinity, ok, err := in.GetAndRemoveMap("affinity.podAffinity"); ok {
+		if out.Affinity == nil {
+			out.Affinity = &v2.Affinity{}
+		} else {
+			// clear this out
+			out.Affinity.PodAffinity = nil
+		}
+
+		if len(podAffinity) > 0 {
+			out.Affinity.PodAffinity = &corev1.PodAffinity{}
+			if err := fromValues(podAffinity, out.Affinity.PodAffinity); err != nil {
+				return false, err
+			}
+			setValues = true
+		}
+	} else if err != nil {
+		return false, err
+	}
+	if podAntiAffinity, ok, err := in.GetAndRemoveMap("affinity.podAntiAffinity"); ok {
+		if out.Affinity == nil {
+			out.Affinity = &v2.Affinity{}
+		} else {
+			// clear this out
+			out.Affinity.PodAntiAffinity = v2.PodAntiAffinity{}
+		}
+
+		if len(podAntiAffinity) > 0 {
+			out.Affinity.PodAntiAffinity.PodAntiAffinity = &corev1.PodAntiAffinity{}
+			if err := fromValues(podAntiAffinity, out.Affinity.PodAntiAffinity.PodAntiAffinity); err != nil {
+				return false, err
+			}
+			setValues = true
+		}
+	} else if err != nil {
+		return false, err
+	}
+
 	if rawAntiAffinityLabelSelector, ok, err := in.GetAndRemoveSlice("podAntiAffinityLabelSelector"); ok && len(rawAntiAffinityLabelSelector) > 0 {
 		if out.Affinity == nil {
 			out.Affinity = &v2.Affinity{}

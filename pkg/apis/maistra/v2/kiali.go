@@ -26,6 +26,7 @@ type KialiInstallConfig struct {
 
 	// Deployment configures the kiali deployment.
 	// +optional
+	// +deprecated
 	Deployment *KialiDeploymentConfig `json:"deployment,omitempty"`
 }
 
@@ -48,7 +49,9 @@ type KialiDashboardConfig struct {
 	EnableTracing *bool `json:"enableTracing,omitempty"`
 }
 
+// DEPRECATED: Use runtime.components.kiali instead.
 // KialiDeploymentConfig configures the kiali deployment
+// +deprecated
 type KialiDeploymentConfig struct {
 	// +optional
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`

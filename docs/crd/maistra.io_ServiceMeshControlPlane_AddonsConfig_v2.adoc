@@ -673,7 +673,7 @@ KialiDashboardConfig configures the behavior of the kiali dashboard
 
 github.com/maistra/istio-operator/pkg/apis/maistra/v2
 
-KialiDeploymentConfig configures the kiali deployment
+DEPRECATED: Use runtime.components.kiali instead. KialiDeploymentConfig configures the kiali deployment
 
 .Table KialiDeploymentConfig Fields
 |===

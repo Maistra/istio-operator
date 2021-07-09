@@ -199,6 +199,10 @@ type CommonPodRuntimeConfig struct {
 // XXX: istio does not support full corev1.Affinity settings, hence the special
 // types here.
 type Affinity struct {
+	// +optional
+	NodeAffinity *corev1.NodeAffinity `json:"nodeAffinity,omitempty"`
+	// +optional
+	PodAffinity *corev1.PodAffinity `json:"podAffinity,omitempty"`
 	// XXX: use corev1.PodAntiAffinity instead, the only things not supported are namespaces and weighting
 	// +optional
 	PodAntiAffinity PodAntiAffinity `json:"podAntiAffinity,omitempty"`
@@ -206,6 +210,8 @@ type Affinity struct {
 
 // PodAntiAffinity configures anti affinity for pod scheduling
 type PodAntiAffinity struct {
+	*corev1.PodAntiAffinity `json:",inline"`
+
 	// +optional
 	RequiredDuringScheduling []PodAntiAffinityTerm `json:"requiredDuringScheduling,omitempty"`
 	// +optional

@@ -327,16 +327,14 @@ var kialiTestCases = []conversionTestCase{
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"kiali": map[string]interface{}{
 				"resourceName": "my-kiali",
-				"deployment": map[string]interface{}{
-					"resources": map[string]interface{}{
-						"requests": map[string]interface{}{
-							"cpu":    "10m",
-							"memory": "128Mi",
-						},
-						"limits": map[string]interface{}{
-							"cpu":    "100m",
-							"memory": "1Gi",
-						},
+				"deployment_resources": map[string]interface{}{
+					"requests": map[string]interface{}{
+						"cpu":    "10m",
+						"memory": "128Mi",
+					},
+					"limits": map[string]interface{}{
+						"cpu":    "100m",
+						"memory": "1Gi",
 					},
 				},
 			},
@@ -450,88 +448,86 @@ var kialiTestCases = []conversionTestCase{
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"kiali": map[string]interface{}{
 				"resourceName": "my-kiali",
-				"deployment": map[string]interface{}{
-					"affinity": map[string]interface{}{
-						"node": map[string]interface{}{
-							"requiredDuringSchedulingIgnoredDuringExecution": map[string]interface{}{
-								"nodeSelectorTerms": []interface{}{
-									map[string]interface{}{
-										"matchFields": []interface{}{
-											map[string]interface{}{
-												"key":      "key1",
-												"operator": "op1",
-												"values":   []string{"value11", "value12"},
-											},
-										},
-									},
-								},
-							},
-							"preferredDuringSchedulingIgnoredDuringExecution": []interface{}{
+				"deployment_affinity": map[string]interface{}{
+					"node": map[string]interface{}{
+						"requiredDuringSchedulingIgnoredDuringExecution": map[string]interface{}{
+							"nodeSelectorTerms": []interface{}{
 								map[string]interface{}{
-									"weight": 1,
-									"preference": map[string]interface{}{
-										"matchFields": []interface{}{
-											map[string]interface{}{
-												"key":      "key2",
-												"operator": "op2",
-												"values":   []string{"value21", "value22"},
-											},
+									"matchFields": []interface{}{
+										map[string]interface{}{
+											"key":      "key1",
+											"operator": "op1",
+											"values":   []string{"value11", "value12"},
 										},
 									},
 								},
 							},
 						},
-						"pod": map[string]interface{}{
-							"requiredDuringSchedulingIgnoredDuringExecution": []interface{}{
-								map[string]interface{}{
-									"labelSelector": map[string]interface{}{
-										"matchLabels": map[string]interface{}{
-											"fookey": "foovalue",
+						"preferredDuringSchedulingIgnoredDuringExecution": []interface{}{
+							map[string]interface{}{
+								"weight": 1,
+								"preference": map[string]interface{}{
+									"matchFields": []interface{}{
+										map[string]interface{}{
+											"key":      "key2",
+											"operator": "op2",
+											"values":   []string{"value21", "value22"},
 										},
-									},
-									"namespaces":  []string{"ns1", "ns2"},
-									"topologyKey": "my-topology-key",
-								},
-							},
-							"preferredDuringSchedulingIgnoredDuringExecution": []interface{}{
-								map[string]interface{}{
-									"weight": 2,
-									"podAffinityTerm": map[string]interface{}{
-										"labelSelector": map[string]interface{}{
-											"matchLabels": map[string]interface{}{
-												"barkey": "barvalue",
-											},
-										},
-										"namespaces":  []string{"ns3", "ns4"},
-										"topologyKey": "my-topology-key2",
 									},
 								},
 							},
 						},
-						"pod_anti": map[string]interface{}{
-							"requiredDuringSchedulingIgnoredDuringExecution": []interface{}{
-								map[string]interface{}{
+					},
+					"pod": map[string]interface{}{
+						"requiredDuringSchedulingIgnoredDuringExecution": []interface{}{
+							map[string]interface{}{
+								"labelSelector": map[string]interface{}{
+									"matchLabels": map[string]interface{}{
+										"fookey": "foovalue",
+									},
+								},
+								"namespaces":  []string{"ns1", "ns2"},
+								"topologyKey": "my-topology-key",
+							},
+						},
+						"preferredDuringSchedulingIgnoredDuringExecution": []interface{}{
+							map[string]interface{}{
+								"weight": 2,
+								"podAffinityTerm": map[string]interface{}{
 									"labelSelector": map[string]interface{}{
 										"matchLabels": map[string]interface{}{
-											"bazkey": "bazvalue",
+											"barkey": "barvalue",
 										},
 									},
-									"namespaces":  []string{"ns5", "ns6"},
-									"topologyKey": "my-topology-key3",
+									"namespaces":  []string{"ns3", "ns4"},
+									"topologyKey": "my-topology-key2",
 								},
 							},
-							"preferredDuringSchedulingIgnoredDuringExecution": []interface{}{
-								map[string]interface{}{
-									"weight": 3,
-									"podAffinityTerm": map[string]interface{}{
-										"labelSelector": map[string]interface{}{
-											"matchLabels": map[string]interface{}{
-												"quxkey": "quxvalue",
-											},
-										},
-										"namespaces":  []string{"ns7", "ns8"},
-										"topologyKey": "my-topology-key4",
+						},
+					},
+					"pod_anti": map[string]interface{}{
+						"requiredDuringSchedulingIgnoredDuringExecution": []interface{}{
+							map[string]interface{}{
+								"labelSelector": map[string]interface{}{
+									"matchLabels": map[string]interface{}{
+										"bazkey": "bazvalue",
 									},
+								},
+								"namespaces":  []string{"ns5", "ns6"},
+								"topologyKey": "my-topology-key3",
+							},
+						},
+						"preferredDuringSchedulingIgnoredDuringExecution": []interface{}{
+							map[string]interface{}{
+								"weight": 3,
+								"podAffinityTerm": map[string]interface{}{
+									"labelSelector": map[string]interface{}{
+										"matchLabels": map[string]interface{}{
+											"quxkey": "quxvalue",
+										},
+									},
+									"namespaces":  []string{"ns7", "ns8"},
+									"topologyKey": "my-topology-key4",
 								},
 							},
 						},
@@ -555,7 +551,7 @@ var kialiTestCases = []conversionTestCase{
 					Name: "my-kiali",
 					Install: &v2.KialiInstallConfig{
 						Deployment: &v2.KialiDeploymentConfig{
-							NodeSelector:map[string]string{
+							NodeSelector: map[string]string{
 								"fookey": "foovalue",
 								"barkey": "barvalue",
 							},
@@ -567,11 +563,9 @@ var kialiTestCases = []conversionTestCase{
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"kiali": map[string]interface{}{
 				"resourceName": "my-kiali",
-				"deployment": map[string]interface{}{
-					"nodeSelector": map[string]interface{}{
-						"fookey": "foovalue",
-						"barkey": "barvalue",
-					},
+				"deployment_nodeSelector": map[string]interface{}{
+					"fookey": "foovalue",
+					"barkey": "barvalue",
 				},
 			},
 		}),
@@ -615,22 +609,20 @@ var kialiTestCases = []conversionTestCase{
 		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
 			"kiali": map[string]interface{}{
 				"resourceName": "my-kiali",
-				"deployment": map[string]interface{}{
-					"tolerations": []interface{}{
-						map[string]interface{}{
-							"key": "key1",
-							"operator": "op1",
-							"value": "value1",
-							"effect": "effect1",
-							"tolerationSeconds": 1,
-						},
-						map[string]interface{}{
-							"key": "key2",
-							"operator": "op2",
-							"value": "value2",
-							"effect": "effect2",
-							"tolerationSeconds": 2,
-						},
+				"deployment_tolerations": []interface{}{
+					map[string]interface{}{
+						"key":               "key1",
+						"operator":          "op1",
+						"value":             "value1",
+						"effect":            "effect1",
+						"tolerationSeconds": 1,
+					},
+					map[string]interface{}{
+						"key":               "key2",
+						"operator":          "op2",
+						"value":             "value2",
+						"effect":            "effect2",
+						"tolerationSeconds": 2,
 					},
 				},
 			},

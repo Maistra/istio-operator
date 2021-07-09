@@ -148,6 +148,7 @@ func (v *versionStrategyV2_0) ValidateV2(ctx context.Context, cl client.Client, 
 	allErrors = validatePolicyType(ctx, meta, spec, v.version, allErrors)
 	allErrors = validateTelemetryType(ctx, meta, spec, v.version, allErrors)
 	allErrors = v.validateProtocolDetection(ctx, meta, spec, allErrors)
+	allErrors = v.validateRuntime(ctx, meta, spec, allErrors)
 	return NewValidationError(allErrors...)
 }
 
@@ -161,6 +162,33 @@ func (v *versionStrategyV2_0) validateProtocolDetection(ctx context.Context, met
 	}
 	if autoDetect.Outbound != nil && *autoDetect.Outbound {
 		allErrors = append(allErrors, fmt.Errorf("automatic protocol detection is not supported in %s; if specified, spec.proxy.networking.protocol.autoDetect.outbound must be set to false", v.String()))
+	}
+	return allErrors
+}
+
+func (v *versionStrategyV2_0) validateRuntime(ctx context.Context, meta *metav1.ObjectMeta, spec *v2.ControlPlaneSpec, allErrors []error) []error {
+	if spec.Runtime == nil || spec.Runtime.Components == nil {
+		return allErrors
+	}
+	for component, config := range spec.Runtime.Components {
+		if config.Pod == nil || config.Pod.Affinity == nil {
+			continue
+		}
+		if component == v2.ControlPlaneComponentNameKiali {
+			if config.Pod.Affinity.PodAntiAffinity.RequiredDuringScheduling != nil || config.Pod.Affinity.PodAntiAffinity.PreferredDuringScheduling != nil {
+				allErrors = append(allErrors, fmt.Errorf("PodAntiAffinity configured via .spec.runtime.components.pod.affinity.podAntiAffinity.requiredDuringScheduling and preferredDuringScheduling is not supported for the %q component", v2.ControlPlaneComponentNameKiali))
+			}
+		} else {
+			if config.Pod.Affinity.NodeAffinity != nil {
+				allErrors = append(allErrors, fmt.Errorf("NodeAffinity is only supported for the %q component", v2.ControlPlaneComponentNameKiali))
+			}
+			if config.Pod.Affinity.PodAffinity != nil {
+				allErrors = append(allErrors, fmt.Errorf("PodAffinity is only supported for the %q component", v2.ControlPlaneComponentNameKiali))
+			}
+			if config.Pod.Affinity.PodAntiAffinity.PodAntiAffinity != nil {
+				allErrors = append(allErrors, fmt.Errorf("PodAntiAffinity configured via .spec.runtime.components.pod.affinity.podAntiAffinity.requiredDuringSchedulingIgnoredDuringExecution and preferredDuringSchedulingIgnoredDuringExecution is only supported for the %q component", v2.ControlPlaneComponentNameKiali))
+			}
+		}
 	}
 	return allErrors
 }
