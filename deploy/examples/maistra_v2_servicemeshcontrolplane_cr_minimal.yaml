@@ -7,6 +7,8 @@ spec:
     # change to Jaeger to enable tracing
     type: None
   addons:
+    prometheus:
+      enabled: false
     jaeger:
       name: jaeger
       install: {}
@@ -17,7 +19,6 @@ spec:
       name: kiali
       enabled: false
       install: {}
-
 ---
 
 apiVersion: maistra.io/v1
