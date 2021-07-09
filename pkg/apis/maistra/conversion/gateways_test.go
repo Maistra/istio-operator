@@ -1439,6 +1439,53 @@ var gatewaysTestCases = []conversionTestCase{
 			},
 		}),
 	},
+	{
+		name: "ingress.additionalContainers." + versions.V2_0.String(),
+		spec: &v2.ControlPlaneSpec{
+			Version: versions.V2_0.String(),
+			Gateways: &v2.GatewaysConfig{
+				ClusterIngress: &v2.ClusterIngressGatewayConfig{},
+			},
+			TechPreview: v1.NewHelmValues(map[string]interface{}{
+				"gateways": map[string]interface{}{
+					"istio-ingressgateway": map[string]interface{}{
+						"additionalContainers": []interface{}{
+							map[string]interface{}{
+								"name":            "custom-container",
+								"image":           "custom-image",
+								"imagePullPolicy": "Always",
+							},
+						},
+					},
+				},
+			}),
+		},
+		isolatedIstio: v1.NewHelmValues(map[string]interface{}{
+			"gateways": map[string]interface{}{
+				"istio-ingressgateway": map[string]interface{}{
+					"name":        "istio-ingressgateway",
+					"gatewayType": "ingress",
+				},
+			},
+		}),
+		completeIstio: v1.NewHelmValues(map[string]interface{}{
+			"global": map[string]interface{}{
+				"multiCluster":  globalMultiClusterDefaults,
+				"meshExpansion": globalMeshExpansionDefaults,
+			},
+			"gateways": map[string]interface{}{
+				"istio-ingressgateway": map[string]interface{}{
+					"additionalContainers": []interface{}{
+						map[string]interface{}{
+							"name":            "custom-container",
+							"image":           "custom-image",
+							"imagePullPolicy": "Always",
+						},
+					},
+				},
+			},
+		}),
+	},
 }
 
 func TestGatewaysConversionFromV2(t *testing.T) {
