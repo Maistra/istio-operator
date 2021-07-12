@@ -1,0 +1,697 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  name: servicemeshoperator.v1.1.16.2
+  namespace: placeholder
+  annotations:
+    categories: "OpenShift Optional, Integration & Delivery"
+    capabilities: "Seamless Upgrades"
+    certified: "false"
+    repository: https://github.com/maistra/istio-operator
+    description: |-
+      The OpenShift Service Mesh Operator enables you to install, configure, and manage an instance of Red Hat OpenShift Service Mesh. OpenShift Service Mesh is based on the open source Istio project.
+
+    containerImage: registry.redhat.io/openshift-service-mesh/istio-rhel8-operator:1.1.16
+    createdAt: 2021-07-12T20:00:52UTC
+    support: Red Hat, Inc. 
+    olm.skipRange: ">=1.0.2 <1.1.16"
+    operators.openshift.io/infrastructure-features: '["Disconnected"]'
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "maistra.io/v1",
+          "kind": "ServiceMeshControlPlane",
+          "metadata": {
+            "name": "basic-install",
+            "namespace": "control-plane-namespace"
+          },
+          "spec": {
+            "version": "v1.1",
+            "istio": {
+              "gateways": {
+                "istio-egressgateway": {
+                  "autoscaleEnabled": false
+                },
+                "istio-ingressgateway": {
+                  "autoscaleEnabled": false,
+                  "ior_enabled": false
+                }
+              },
+              "mixer": {
+                "policy": {
+                  "autoscaleEnabled": false
+                },
+                "telemetry": {
+                  "autoscaleEnabled": false
+                }
+              },
+              "pilot": {
+                "autoscaleEnabled": false,
+                "traceSampling": 100.0
+              },
+              "kiali": {
+                "enabled": true
+              },
+              "grafana": {
+                "enabled": true
+              },
+              "tracing": {
+                "enabled": true,
+                "jaeger": {
+                  "template": "all-in-one"
+                }
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "maistra.io/v1",
+          "kind": "ServiceMeshMemberRoll",
+          "metadata": {
+            "name": "default",
+            "namespace": "control-plane-namespace"
+          },
+          "spec": {
+            "members": [
+              "your-project",
+              "another-of-your-projects" 
+            ]
+          }
+        },
+        {
+          "apiVersion": "maistra.io/v1",
+          "kind": "ServiceMeshMember",
+          "metadata": {
+            "name": "default",
+            "namespace": "application-namespace"
+          },
+          "spec": {
+            "controlPlaneRef": {
+              "name": "basic-install",
+              "namespace": "control-plane-namespace"
+            }
+          }
+        }
+      ]
+spec:
+  version: 1.1.16.2
+  maturity: alpha
+  displayName: Red Hat OpenShift Service Mesh
+  description: |-
+    Red Hat OpenShift Service Mesh is a platform that provides behavioral insight and operational control over a service mesh, providing a uniform way to connect, secure, and monitor microservice applications.
+
+    ### Overview
+
+    Red Hat OpenShift Service Mesh, based on the open source [Istio](https://istio.io/) project, adds a transparent layer on existing
+    distributed applications without requiring any changes to the service code. You add Red Hat OpenShift Service Mesh
+    support to services by deploying a special sidecar proxy throughout your environment that intercepts all network
+    communication between microservices. You configure and manage the service mesh using the control plane features.
+
+    Red Hat OpenShift Service Mesh provides an easy way to create a network of deployed services that provides discovery,
+    load balancing, service-to-service authentication, failure recovery, metrics, and monitoring. A service mesh also
+    provides more complex operational functionality, including A/B testing, canary releases, rate limiting, access
+    control, and end-to-end authentication.
+
+    ### Core Capabilities
+
+    Red Hat OpenShift Service Mesh supports uniform application of a number of key capabilities across a network of services:
+
+    + **Traffic Management** - Control the flow of traffic and API calls between services, make calls more reliable,
+      and make the network more robust in the face of adverse conditions.
+
+    + **Service Identity and Security** - Provide services in the mesh with a verifiable identity and provide the
+      ability to protect service traffic as it flows over networks of varying degrees of trustworthiness.
+
+    + **Policy Enforcement** - Apply organizational policy to the interaction between services, ensure access policies
+      are enforced and resources are fairly distributed among consumers. Policy changes are made by configuring the
+      mesh, not by changing application code.
+
+    + **Telemetry** - Gain understanding of the dependencies between services and the nature and flow of traffic between
+      them, providing the ability to quickly identify issues.
+
+    ### Joining Projects Into a Mesh
+
+    Once an instance of Red Hat OpenShift Service Mesh has been installed, it will only exercise control over services within its own
+    project.  Other projects may be added into the mesh using one of two methods:
+
+    1. A **ServiceMeshMember** resource may be created in other projects to add those projects into the mesh.  The
+      **ServiceMeshMember** specifies a reference to the **ServiceMeshControlPlane** object that was used to install
+      the control plane.  The user creating the **ServiceMeshMember** resource must have permission to *use* the
+      **ServiceMeshControlPlane** object.  The adminstrator for the project containing the control plane can grant
+      individual users or groups the *use* permissions.
+    
+    2. A **ServiceMeshMemberRoll** resource may be created in the project containing the control plane.  This resource
+      contains a single *members* list of all the projects that should belong in the mesh.  The resource must be named
+      *default*.  The user creating the resource must have *edit* or *admin* permissions for all projects in the
+      *members* list.
+
+    ### More Information
+
+    * [Documentation](https://docs.openshift.com/container-platform/latest/service_mesh/servicemesh-release-notes.html)
+    * [Bugs](https://issues.redhat.com/projects/OSSM)
+
+  icon:
+  - mediatype: image/png
+    base64data: |-
+      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
+      ylLtXP0/aeQGS1ZSYNsAAAAASUVORK5CYII=
+
+  keywords: [ 'istio', 'maistra', 'servicemesh' ]
+  maintainers:
+  - name: Red Hat, OpenShift Service Mesh
+    email: istio-feedback@redhat.com
+  provider:
+    name: Red Hat, Inc.
+  links:
+  - name: Red Hat OpenShift Service Mesh
+    url: https://docs.openshift.com/container-platform/latest/service_mesh/servicemesh-release-notes.html
+  - name: Istio
+    url: https://istio.io/
+  - name: Operator Source Code
+    url: https://github.com/Maistra/istio-operator
+  - name: Bugs
+    url: https://issues.redhat.com/projects/OSSM
+  replaces: servicemeshoperator.v1.1.16.1
+  installModes:
+  - type: OwnNamespace
+    supported: false
+  - type: SingleNamespace
+    supported: false
+  - type: MultiNamespace
+    supported: false
+  - type: AllNamespaces
+    supported: true
+  relatedImages:
+  - name: v1_0.3scale-istio-adapter
+    image: registry.redhat.io/openshift-service-mesh/3scale-istio-adapter-rhel8:1.0.0
+  - name: v1_0.citadel
+    image: registry.redhat.io/openshift-service-mesh/citadel-rhel8:1.0.11
+  - name: v1_0.cni
+    image: registry.redhat.io/openshift-service-mesh/istio-cni-rhel8:1.0.11
+  - name: v1_0.galley
+    image: registry.redhat.io/openshift-service-mesh/galley-rhel8:1.0.11
+  - name: v1_0.grafana
+    image: registry.redhat.io/openshift-service-mesh/grafana-rhel8:1.0.11
+  - name: v1_0.mixer
+    image: registry.redhat.io/openshift-service-mesh/mixer-rhel8:1.0.11
+  - name: v1_0.pilot
+    image: registry.redhat.io/openshift-service-mesh/pilot-rhel8:1.0.11
+  - name: v1_0.prometheus
+    image: registry.redhat.io/openshift-service-mesh/prometheus-rhel8:1.0.11
+  - name: v1_0.proxy-init
+    image: registry.redhat.io/openshift-service-mesh/proxy-init-rhel7:1.0.11
+  - name: v1_0.proxyv2
+    image: registry.redhat.io/openshift-service-mesh/proxyv2-rhel8:1.0.11
+  - name: v1_0.sidecar-injector
+    image: registry.redhat.io/openshift-service-mesh/sidecar-injector-rhel8:1.0.11
+  - name: v1_1.3scale-istio-adapter
+    image: registry.redhat.io/openshift-service-mesh/3scale-istio-adapter-rhel8:1.0.0
+  - name: v1_1.citadel
+    image: registry.redhat.io/openshift-service-mesh/citadel-rhel8:1.1.16
+  - name: v1_1.cni
+    image: registry.redhat.io/openshift-service-mesh/istio-cni-rhel8:1.1.16
+  - name: v1_1.galley
+    image: registry.redhat.io/openshift-service-mesh/galley-rhel8:1.1.16
+  - name: v1_1.grafana
+    image: registry.redhat.io/openshift-service-mesh/grafana-rhel8:1.1.16
+  - name: v1_1.ior
+    image: registry.redhat.io/openshift-service-mesh/ior-rhel8:1.1.16
+  - name: v1_1.mixer
+    image: registry.redhat.io/openshift-service-mesh/mixer-rhel8:1.1.16
+  - name: v1_1.pilot
+    image: registry.redhat.io/openshift-service-mesh/pilot-rhel8:1.1.16
+  - name: v1_1.prometheus
+    image: registry.redhat.io/openshift-service-mesh/prometheus-rhel8:1.1.16
+  - name: v1_1.proxy-init
+    image: registry.redhat.io/openshift-service-mesh/proxy-init-rhel7:1.1.16
+  - name: v1_1.proxyv2
+    image: registry.redhat.io/openshift-service-mesh/proxyv2-rhel8:1.1.16
+  - name: v1_1.sidecar-injector
+    image: registry.redhat.io/openshift-service-mesh/sidecar-injector-rhel8:1.1.16
+  install:
+    strategy: deployment
+    spec:
+      clusterPermissions:
+      - serviceAccountName: istio-operator
+        rules:
+
+        - apiGroups:
+          - ''
+          resources:
+          - configmaps
+          - endpoints
+          - namespaces
+          - persistentvolumeclaims
+          - pods
+          - replicationcontrollers
+          - secrets
+          - serviceaccounts
+          - services
+          - events
+          verbs:
+          - '*'
+        - apiGroups:
+          - apps
+          - extensions
+          resources:
+          - daemonsets
+          - deployments
+          - deployments/finalizers
+          - ingresses
+          - ingresses/status
+          - replicasets
+          - statefulsets
+          verbs:
+          - '*'
+        - apiGroups:
+          - autoscaling
+          resources:
+          - horizontalpodautoscalers
+          verbs:
+          - '*'
+        - apiGroups:
+          - policy
+          resources:
+          - poddisruptionbudgets
+          verbs:
+          - '*'
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resources:
+          - mutatingwebhookconfigurations
+          - validatingwebhookconfigurations
+          verbs:
+          - '*'
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions
+          verbs:
+          - '*'
+        - apiGroups:
+          - certmanager.k8s.io
+          resources:
+          - clusterissuers
+          verbs:
+          - '*'
+        - apiGroups:
+          - networking.k8s.io
+          resources:
+          - networkpolicies
+          verbs:
+          - '*'
+        - apiGroups:
+          - rbac.authorization.k8s.io
+          resources:
+          - clusterrolebindings
+          - clusterroles
+          - rolebindings
+          - roles
+          verbs:
+          - '*'
+        - apiGroups:
+          - authentication.istio.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - config.istio.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - networking.istio.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - rbac.istio.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - security.istio.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - jaegertracing.io
+          resources:
+          - jaegers
+          verbs:
+          - '*'
+        - apiGroups:
+          - kiali.io
+          resources:
+          - kialis
+          verbs:
+          - '*'
+        - apiGroups:
+          - maistra.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - authentication.maistra.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - rbac.maistra.io
+          resources:
+          - '*'
+          verbs:
+          - '*'
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          - routes/custom-host
+          verbs:
+          - '*'
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        - apiGroups:
+          - network.openshift.io
+          resources:
+          - clusternetworks
+          verbs:
+          - get
+        - apiGroups:
+          - config.openshift.io
+          resources:
+          - networks
+          verbs:
+          - get
+        - apiGroups:
+          - image.openshift.io
+          resources:
+          - imagestreams
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - network.openshift.io
+          resources:
+          - netnamespaces
+          verbs:
+          - get
+          - list
+          - watch
+          - update
+        - apiGroups:
+          - k8s.cni.cncf.io
+          resources:
+          - network-attachment-definitions
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - watch
+        - apiGroups:
+          - security.openshift.io
+          resources:
+          - securitycontextconstraints
+          resourceNames:
+          - privileged
+          verbs:
+          - use
+        - apiGroups:
+          - ''
+          resources:
+          - nodes
+          - nodes/proxy
+          verbs:
+          - get
+          - list
+          - watch
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - nonResourceURLs:
+          - /metrics
+          verbs:
+          - get
+      deployments:
+      - name: istio-operator
+        spec:
+
+          replicas: 1
+          selector:
+            matchLabels:
+              name: istio-operator
+          template:
+            metadata:
+              labels:
+                name: istio-operator
+              annotations:
+                olm.relatedImage.v1_0.3scale-istio-adapter: registry.redhat.io/openshift-service-mesh/3scale-istio-adapter-rhel8:1.0.0
+                olm.relatedImage.v1_0.citadel: registry.redhat.io/openshift-service-mesh/citadel-rhel8:1.0.11
+                olm.relatedImage.v1_0.cni: registry.redhat.io/openshift-service-mesh/istio-cni-rhel8:1.0.11
+                olm.relatedImage.v1_0.galley: registry.redhat.io/openshift-service-mesh/galley-rhel8:1.0.11
+                olm.relatedImage.v1_0.grafana: registry.redhat.io/openshift-service-mesh/grafana-rhel8:1.0.11
+                olm.relatedImage.v1_0.mixer: registry.redhat.io/openshift-service-mesh/mixer-rhel8:1.0.11
+                olm.relatedImage.v1_0.pilot: registry.redhat.io/openshift-service-mesh/pilot-rhel8:1.0.11
+                olm.relatedImage.v1_0.prometheus: registry.redhat.io/openshift-service-mesh/prometheus-rhel8:1.0.11
+                olm.relatedImage.v1_0.proxy-init: registry.redhat.io/openshift-service-mesh/proxy-init-rhel7:1.0.11
+                olm.relatedImage.v1_0.proxyv2: registry.redhat.io/openshift-service-mesh/proxyv2-rhel8:1.0.11
+                olm.relatedImage.v1_0.sidecar-injector: registry.redhat.io/openshift-service-mesh/sidecar-injector-rhel8:1.0.11
+                olm.relatedImage.v1_1.3scale-istio-adapter: registry.redhat.io/openshift-service-mesh/3scale-istio-adapter-rhel8:1.0.0
+                olm.relatedImage.v1_1.citadel: registry.redhat.io/openshift-service-mesh/citadel-rhel8:1.1.16
+                olm.relatedImage.v1_1.cni: registry.redhat.io/openshift-service-mesh/istio-cni-rhel8:1.1.16
+                olm.relatedImage.v1_1.galley: registry.redhat.io/openshift-service-mesh/galley-rhel8:1.1.16
+                olm.relatedImage.v1_1.grafana: registry.redhat.io/openshift-service-mesh/grafana-rhel8:1.1.16
+                olm.relatedImage.v1_1.ior: registry.redhat.io/openshift-service-mesh/ior-rhel8:1.1.16
+                olm.relatedImage.v1_1.mixer: registry.redhat.io/openshift-service-mesh/mixer-rhel8:1.1.16
+                olm.relatedImage.v1_1.pilot: registry.redhat.io/openshift-service-mesh/pilot-rhel8:1.1.16
+                olm.relatedImage.v1_1.prometheus: registry.redhat.io/openshift-service-mesh/prometheus-rhel8:1.1.16
+                olm.relatedImage.v1_1.proxy-init: registry.redhat.io/openshift-service-mesh/proxy-init-rhel7:1.1.16
+                olm.relatedImage.v1_1.proxyv2: registry.redhat.io/openshift-service-mesh/proxyv2-rhel8:1.1.16
+                olm.relatedImage.v1_1.sidecar-injector: registry.redhat.io/openshift-service-mesh/sidecar-injector-rhel8:1.1.16
+                oauth-proxy.query: 'true'
+                oauth-proxy.namespace: openshift
+                oauth-proxy.name: oauth-proxy
+                oauth-proxy.tag: v4.4
+            spec:
+              serviceAccountName: istio-operator
+              containers:
+              - name: istio-operator
+                image: registry.redhat.io/openshift-service-mesh/istio-rhel8-operator:1.1.16
+                ports:
+                - containerPort: 11999
+                  name: validation
+                - containerPort: 60000
+                  name: metrics
+                command:
+                - istio-operator
+                - --config
+                - /etc/operator/olm/config.properties
+                imagePullPolicy: Always
+                env:
+                - name: WATCH_NAMESPACE
+                  value: ''
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: istio-operator
+                - name: METADATA_VERSION
+                  value: 1.1.16.2
+                volumeMounts:
+                - name: operator-olm-config
+                  mountPath: /etc/operator/olm
+                  readOnly: true
+              volumes:
+              - name: operator-olm-config
+                downwardAPI:
+                  defaultMode: 420
+                  items:
+                  - fieldRef:
+                      fieldPath: metadata.annotations
+                    path: config.properties
+  customresourcedefinitions:
+    owned:
+    - name: servicemeshcontrolplanes.maistra.io
+      version: v1
+      kind: ServiceMeshControlPlane
+      displayName: Istio Service Mesh Control Plane
+      description: An Istio control plane installation
+      specDescriptors:
+      - description: Specify the version of control control plane you want to install
+        displayName: Control Plane Version
+        path: version
+        x-descriptors:
+          - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:General'
+          - 'urn:alm:descriptor:com.tectonic.ui:select:v1.1'
+          - 'urn:alm:descriptor:com.tectonic.ui:select:v1.0'
+      - description: Enable mTLS for communication between control plane components (galley, pilot, etc.)
+        displayName: Control Plane Security
+        path: istio.global.controlPlaneSecurityEnabled
+        x-descriptors:
+          - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:General'
+          - 'urn:alm:descriptor:com.tectonic.ui:booleanSwitch'
+      - description: Enable mTLS for communcation between services in the mesh
+        displayName: Data Plane Security
+        path: istio.global.mtls.enabled
+        x-descriptors:
+          - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:General'
+          - 'urn:alm:descriptor:com.tectonic.ui:booleanSwitch'
+      - description: Set to true to install Kiali
+        displayName: Install Kiali
+        path: istio.kiali.enabled
+        x-descriptors:
+          - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:visualization'
+          - 'urn:alm:descriptor:com.tectonic.ui:booleanSwitch'
+      - description: Set to true to install Grafana
+        displayName: Install Grafana
+        path: istio.grafana.enabled
+        x-descriptors:
+          - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:visualization'
+          - 'urn:alm:descriptor:com.tectonic.ui:booleanSwitch'
+      - description: Set to false to disable tracing
+        displayName: Install Jaeger
+        path: istio.tracing.enabled
+        x-descriptors:
+          - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:tracing'
+          - 'urn:alm:descriptor:com.tectonic.ui:booleanSwitch'
+      - description: Set template to use when installing Jaeger
+        displayName: Jaeger template
+        path: istio.tracing.jaeger.template
+        x-descriptors:
+          - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:tracing'
+          - 'urn:alm:descriptor:com.tectonic.ui:fieldDependency:istio.tracing.enabled:true'
+          - 'urn:alm:descriptor:com.tectonic.ui:select:all-in-one'
+          - 'urn:alm:descriptor:com.tectonic.ui:select:production-elasticsearch'
+      - description: Set to true to install the Istio 3Scale adapter
+        displayName: Install 3Scale Adapter
+        path: threeScale.enabled
+        x-descriptors:
+          - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:API_Management'
+          - 'urn:alm:descriptor:com.tectonic.ui:booleanSwitch'
+          - 'urn:alm:descriptor:com.tectonic.ui:advanced'
+      - description: Limits describes the minimum/maximum amount of compute resources required/allowed
+        displayName: Default Resource Requirements
+        path: istio.global.defaultResources
+        x-descriptors:
+          - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Resource_Requirements'
+          - 'urn:alm:descriptor:com.tectonic.ui:resourceRequirements'
+          - 'urn:alm:descriptor:com.tectonic.ui:advanced'
+    - name: servicemeshmembers.maistra.io
+      version: v1
+      kind: ServiceMeshMember
+      displayName: Istio Service Mesh Member
+      description: Marks the containing namespace as a member of the referenced Service Mesh
+      specDescriptors:
+      - path: controlPlaneRef.namespace
+        description: The namespace of the ServiceMeshControlPlane to which this namespace belongs
+        displayName: Namespace
+        x-descriptors:
+          - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Service_Mesh_Control_Plane'
+          - 'urn:alm:descriptor:io.kubernetes:Namespace'
+      - path: controlPlaneRef.name
+        description: The name of the ServiceMeshControlPlane to which this namespace belongs
+        displayName: Name
+        x-descriptors:
+          - 'urn:alm:descriptor:com.tectonic.ui:fieldGroup:Service_Mesh_Control_Plane'
+          - 'urn:alm:descriptor:com.tectonic.ui:text'
+    - name: servicemeshmemberrolls.maistra.io
+      version: v1
+      kind: ServiceMeshMemberRoll
+      displayName: Istio Service Mesh Member Roll
+      description: A list of namespaces in Service Mesh

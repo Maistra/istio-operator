@@ -8,7 +8,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   attributes:
@@ -152,7 +152,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   attributes:
@@ -219,7 +219,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   compiledAdapter: stdio
@@ -235,7 +235,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   compiledTemplate: logentry
@@ -295,7 +295,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   compiledTemplate: logentry
@@ -340,7 +340,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   match: context.protocol == "http" || context.protocol == "grpc"
@@ -358,7 +358,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   match: context.protocol == "tcp"
@@ -378,7 +378,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   compiledTemplate: metric
@@ -415,7 +415,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   compiledTemplate: metric
@@ -452,7 +452,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   compiledTemplate: metric
@@ -489,7 +489,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   compiledTemplate: metric
@@ -526,7 +526,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   compiledTemplate: metric
@@ -560,7 +560,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   compiledTemplate: metric
@@ -594,7 +594,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   compiledTemplate: metric
@@ -628,7 +628,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   compiledTemplate: metric
@@ -662,7 +662,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   compiledAdapter: prometheus
@@ -865,7 +865,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   match: (context.protocol == "http" || context.protocol == "grpc") && (match((request.useragent | "-"), "kube-probe*") == false) && (match((request.useragent | "-"), "Prometheus*") == false)
@@ -886,7 +886,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   match: context.protocol == "tcp"
@@ -905,7 +905,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   match: context.protocol == "tcp" && ((connection.event | "na") == "open")
@@ -923,7 +923,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   match: context.protocol == "tcp" && ((connection.event | "na") == "close")
@@ -943,7 +943,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   compiledAdapter: kubernetesenv
@@ -965,7 +965,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   actions:
@@ -982,7 +982,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   match: context.protocol == "tcp"
@@ -1000,7 +1000,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   compiledTemplate: kubernetes
@@ -1049,7 +1049,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   host: istio-policy.{{ .Release.Namespace }}.svc.{{ .Values.global.proxy.clusterDomain }}
@@ -1083,7 +1083,7 @@ metadata:
     app: {{ template "mixer.name" . }}
     chart: {{ template "mixer.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   host: istio-telemetry.{{ .Release.Namespace }}.svc.{{ .Values.global.proxy.clusterDomain }}

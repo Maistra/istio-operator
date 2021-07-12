@@ -9,7 +9,7 @@ metadata:
   name: {{ $key }}
   namespace: {{ $spec.namespace | default $.Release.Namespace }}
   labels:
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
 {{ $labels | toYaml | indent 4 }}
 spec:
 {{- if not $spec.autoscaleEnabled }}

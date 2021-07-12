@@ -9,7 +9,7 @@ metadata:
     heritage: Tiller
     istio: core
     package: istio.io.mixer
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   name: attributemanifests.config.istio.io
 spec:
@@ -83,7 +83,7 @@ metadata:
     app: istio-pilot
     heritage: Tiller
     istio: rbac
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   name: servicemeshrbacconfigs.rbac.maistra.io
 spec:
@@ -169,7 +169,7 @@ metadata:
     app: istio-pilot
     chart: istio
     heritage: Tiller
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   name: destinationrules.networking.istio.io
 spec:
@@ -937,7 +937,7 @@ metadata:
     app: istio-pilot
     chart: istio
     heritage: Tiller
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   name: envoyfilters.networking.istio.io
 spec:
@@ -1232,7 +1232,7 @@ metadata:
     app: istio-pilot
     chart: istio
     heritage: Tiller
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   name: gateways.networking.istio.io
 spec:
@@ -1380,7 +1380,7 @@ metadata:
     app: istio-mixer
     chart: istio
     heritage: Tiller
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   name: httpapispecbindings.config.istio.io
 spec:
@@ -1473,7 +1473,7 @@ metadata:
     app: istio-mixer
     chart: istio
     heritage: Tiller
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   name: httpapispecs.config.istio.io
 spec:
@@ -1684,7 +1684,7 @@ metadata:
     app: istio-citadel
     chart: istio
     heritage: Tiller
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   name: servicemeshpolicies.authentication.maistra.io
 spec:
@@ -2415,7 +2415,7 @@ metadata:
     app: istio-citadel
     chart: istio
     heritage: Tiller
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   name: policies.authentication.istio.io
 spec:
@@ -3145,7 +3145,7 @@ metadata:
     app: istio-mixer
     chart: istio
     heritage: Tiller
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   name: quotaspecbindings.config.istio.io
 spec:
@@ -3225,7 +3225,7 @@ metadata:
     app: istio-mixer
     chart: istio
     heritage: Tiller
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   name: quotaspecs.config.istio.io
 spec:
@@ -3311,7 +3311,7 @@ metadata:
     heritage: Tiller
     istio: rbac
     package: istio.io.mixer
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   name: rbacconfigs.rbac.istio.io
 spec:
@@ -3399,7 +3399,7 @@ metadata:
     heritage: Tiller
     istio: core
     package: istio.io.mixer
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   name: rules.config.istio.io
 spec:
@@ -3552,7 +3552,7 @@ metadata:
     app: istio-pilot
     chart: istio
     heritage: Tiller
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   name: serviceentries.networking.istio.io
 spec:
@@ -3698,7 +3698,7 @@ metadata:
     heritage: Tiller
     istio: rbac
     package: istio.io.mixer
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   name: servicerolebindings.rbac.istio.io
 spec:
@@ -3898,7 +3898,7 @@ metadata:
     heritage: Tiller
     istio: rbac
     package: istio.io.mixer
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   name: serviceroles.rbac.istio.io
 spec:
@@ -4007,7 +4007,7 @@ metadata:
     app: istio-pilot
     chart: istio
     heritage: Tiller
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   name: virtualservices.networking.istio.io
 spec:
@@ -4718,7 +4718,7 @@ metadata:
     istio: mixer-adapter
     chart: istio
     heritage: Tiller
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   annotations:
     "helm.sh/resource-policy": keep
@@ -4750,7 +4750,7 @@ metadata:
     istio: mixer-instance
     chart: istio
     heritage: Tiller
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   annotations:
     "helm.sh/resource-policy": keep
@@ -4782,7 +4782,7 @@ metadata:
     istio: mixer-template
     chart: istio
     heritage: Tiller
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   annotations:
     "helm.sh/resource-policy": keep
@@ -4814,7 +4814,7 @@ metadata:
     istio: mixer-handler
     chart: istio
     heritage: Tiller
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: istio
   annotations:
     "helm.sh/resource-policy": keep

@@ -9,7 +9,7 @@ metadata:
     app: {{ template "pilot.name" . }}
     chart: {{ template "pilot.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   hosts:
@@ -50,7 +50,7 @@ metadata:
     app: {{ template "pilot.name" . }}
     chart: {{ template "pilot.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   hosts:
@@ -78,7 +78,7 @@ metadata:
     app: {{ template "pilot.name" . }}
     chart: {{ template "pilot.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   host: istio-pilot.{{ .Release.Namespace }}.svc.{{ .Values.global.proxy.clusterDomain }}

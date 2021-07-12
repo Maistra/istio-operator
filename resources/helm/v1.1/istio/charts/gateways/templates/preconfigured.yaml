@@ -8,7 +8,7 @@ metadata:
     app: {{ template "gateway.name" . }}
     chart: {{ template "gateway.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   selector:
@@ -46,7 +46,7 @@ metadata:
     app: {{ template "gateway.name" . }}
     chart: {{ template "gateway.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   selector:
@@ -83,7 +83,7 @@ metadata:
     app: {{ template "gateway.name" . }}
     chart: {{ template "gateway.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   selector:
@@ -132,7 +132,7 @@ metadata:
     app: {{ template "gateway.name" . }}
     chart: {{ template "gateway.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   selector:
@@ -165,7 +165,7 @@ metadata:
     app: {{ template "gateway.name" . }}
     chart: {{ template "gateway.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   selector:
@@ -197,7 +197,7 @@ metadata:
     app: {{ template "gateway.name" . }}
     chart: {{ template "gateway.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   workloadLabels:
@@ -233,7 +233,7 @@ metadata:
     app: {{ template "gateway.name" . }}
     chart: {{ template "gateway.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   host: "*.global"

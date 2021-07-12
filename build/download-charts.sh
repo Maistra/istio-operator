@@ -5,7 +5,7 @@ set -e
 # include sed_wrap
 source $(dirname ${BASH_SOURCE})/sed-wrapper.sh
 
-: ${MAISTRA_VERSION:=1.1.16.1}
+: ${MAISTRA_VERSION:=1.1.16.2}
 : ${MAISTRA_REPO:=https://github.com/Maistra/istio}
 : ${MAISTRA_BRANCH:=maistra-1.1}
 

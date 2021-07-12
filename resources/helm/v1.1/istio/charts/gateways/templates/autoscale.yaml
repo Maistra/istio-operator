@@ -9,7 +9,7 @@ metadata:
   labels:
     chart: {{ template "gateway.chart" $ }}
     heritage: {{ $.Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ $.Release.Name }}
     {{- range $key, $val := $spec.labels }}
     {{ $key }}: {{ $val }}

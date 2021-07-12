@@ -7,7 +7,7 @@ metadata:
     app: istio
     chart: {{ template "istio.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   ingress:
@@ -28,7 +28,7 @@ metadata:
     app: istio
     chart: {{ template "istio.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
   annotations:
     "maistra.io/internal": "true"
@@ -50,7 +50,7 @@ metadata:
   labels:
     chart: {{ template "istio.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
 spec:
   podSelector:
@@ -76,7 +76,7 @@ metadata:
     app: jaeger
     chart: {{ template "istio.chart" . }}
     heritage: {{ .Release.Service }}
-    maistra-version: 1.1.16.1
+    maistra-version: 1.1.16.2
     release: {{ .Release.Name }}
   annotations:
     "maistra.io/internal": "true"
